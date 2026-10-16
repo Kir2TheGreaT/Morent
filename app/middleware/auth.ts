@@ -1,7 +1,7 @@
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware(() => {
   const authCookie = useCookie("auth-logged-in");
 
-  if (!authCookie.value && to.path !== "/loginPage") {
+  if (!authCookie.value) {
     return navigateTo("/loginPage");
   }
 });

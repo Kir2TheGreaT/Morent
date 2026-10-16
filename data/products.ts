@@ -1,5 +1,3 @@
-import { ref } from "vue";
-
 export interface Product {
   id: number;
   name: string;
@@ -9,10 +7,9 @@ export interface Product {
   drive: string;
   seats: number;
   price: number;
-  favorite: boolean;
 }
 
-export const products = [
+export const products: Product[] = [
   {
     id: 1,
     name: "Koenigsegg",
@@ -22,7 +19,6 @@ export const products = [
     drive: "Manual",
     seats: 2,
     price: 99.0,
-    favorite: false,
   },
   {
     id: 2,
@@ -33,7 +29,6 @@ export const products = [
     drive: "Manual",
     seats: 2,
     price: 80.0,
-    favorite: false,
   },
   {
     id: 3,
@@ -44,7 +39,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 96.0,
-    favorite: false,
   },
   {
     id: 4,
@@ -55,7 +49,6 @@ export const products = [
     drive: "Manual",
     seats: 6,
     price: 80.0,
-    favorite: false,
   },
   {
     id: 5,
@@ -66,7 +59,6 @@ export const products = [
     drive: "Manual",
     seats: 6,
     price: 80.0,
-    favorite: false,
   },
   {
     id: 6,
@@ -77,7 +69,6 @@ export const products = [
     drive: "Manual",
     seats: 6,
     price: 74.0,
-    favorite: false,
   },
   {
     id: 7,
@@ -88,7 +79,6 @@ export const products = [
     drive: "Manual",
     seats: 6,
     price: 80.0,
-    favorite: false,
   },
   {
     id: 8,
@@ -99,7 +89,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 80.0,
-    favorite: false,
   },
   {
     id: 9,
@@ -110,7 +99,6 @@ export const products = [
     drive: "Manual",
     seats: 6,
     price: 80.0,
-    favorite: false,
   },
   {
     id: 10,
@@ -121,7 +109,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 74.0,
-    favorite: false,
   },
   // {
   //     id:11,
@@ -144,7 +131,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 95.0,
-    favorite: false,
   },
   {
     id: 12,
@@ -155,7 +141,6 @@ export const products = [
     drive: "Manual",
     seats: 2,
     price: 110.0,
-    favorite: false,
   },
   {
     id: 13,
@@ -166,7 +151,6 @@ export const products = [
     drive: "Automatic",
     seats: 2,
     price: 105.0,
-    favorite: false,
   },
   {
     id: 14,
@@ -177,7 +161,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 65.0,
-    favorite: false,
   },
   {
     id: 15,
@@ -188,7 +171,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 68.0,
-    favorite: false,
   },
   {
     id: 16,
@@ -199,7 +181,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 120.0,
-    favorite: false,
   },
   {
     id: 17,
@@ -210,7 +191,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 130.0,
-    favorite: false,
   },
   {
     id: 18,
@@ -221,7 +201,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 90.0,
-    favorite: false,
   },
   {
     id: 19,
@@ -232,7 +211,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 92.0,
-    favorite: false,
   },
   {
     id: 20,
@@ -243,7 +221,6 @@ export const products = [
     drive: "Automatic",
     seats: 2,
     price: 150.0,
-    favorite: false,
   },
   {
     id: 21,
@@ -254,7 +231,6 @@ export const products = [
     drive: "Automatic",
     seats: 2,
     price: 160.0,
-    favorite: false,
   },
   {
     id: 22,
@@ -265,7 +241,6 @@ export const products = [
     drive: "Manual",
     seats: 2,
     price: 125.0,
-    favorite: false,
   },
   {
     id: 23,
@@ -276,7 +251,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 70.0,
-    favorite: false,
   },
   {
     id: 24,
@@ -287,7 +261,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 72.0,
-    favorite: false,
   },
   {
     id: 25,
@@ -298,7 +271,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 98.0,
-    favorite: false,
   },
   {
     id: 26,
@@ -309,7 +281,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 69.0,
-    favorite: false,
   },
   {
     id: 27,
@@ -320,7 +291,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 71.0,
-    favorite: false,
   },
   {
     id: 28,
@@ -331,7 +301,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 60.0,
-    favorite: false,
   },
   {
     id: 29,
@@ -342,7 +311,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 62.0,
-    favorite: false,
   },
   {
     id: 30,
@@ -353,7 +321,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 58.0,
-    favorite: false,
   },
   {
     id: 31,
@@ -364,7 +331,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 55.0,
-    favorite: false,
   },
   {
     id: 32,
@@ -375,7 +341,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 57.0,
-    favorite: false,
   },
   {
     id: 33,
@@ -386,7 +351,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 68.0,
-    favorite: false,
   },
   {
     id: 34,
@@ -397,7 +361,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 65.0,
-    favorite: false,
   },
   {
     id: 35,
@@ -408,7 +371,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 63.0,
-    favorite: false,
   },
   {
     id: 36,
@@ -419,7 +381,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 59.0,
-    favorite: false,
   },
   {
     id: 37,
@@ -430,7 +391,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 62.0,
-    favorite: false,
   },
   {
     id: 38,
@@ -441,7 +401,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 75.0,
-    favorite: false,
   },
   {
     id: 39,
@@ -452,7 +411,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 77.0,
-    favorite: false,
   },
   {
     id: 40,
@@ -463,7 +421,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 78.0,
-    favorite: false,
   },
   {
     id: 41,
@@ -474,7 +431,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 56.0,
-    favorite: false,
   },
   {
     id: 42,
@@ -485,7 +441,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 55.0,
-    favorite: false,
   },
   {
     id: 43,
@@ -496,7 +451,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 70.0,
-    favorite: false,
   },
   {
     id: 44,
@@ -507,7 +461,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 68.0,
-    favorite: false,
   },
   {
     id: 45,
@@ -518,7 +471,6 @@ export const products = [
     drive: "Manual",
     seats: 4,
     price: 50.0,
-    favorite: false,
   },
   {
     id: 46,
@@ -529,7 +481,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 95.0,
-    favorite: false,
   },
   {
     id: 47,
@@ -540,7 +491,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 98.0,
-    favorite: false,
   },
   {
     id: 48,
@@ -551,7 +501,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 96.0,
-    favorite: false,
   },
   {
     id: 49,
@@ -562,7 +511,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 94.0,
-    favorite: false,
   },
   {
     id: 50,
@@ -573,7 +521,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 92.0,
-    favorite: false,
   },
   {
     id: 51,
@@ -584,7 +531,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 97.0,
-    favorite: false,
   },
   {
     id: 52,
@@ -595,7 +541,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 93.0,
-    favorite: false,
   },
   {
     id: 53,
@@ -606,7 +551,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 90.0,
-    favorite: false,
   },
   {
     id: 54,
@@ -617,7 +561,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 78.0,
-    favorite: false,
   },
   {
     id: 55,
@@ -628,7 +571,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 80.0,
-    favorite: false,
   },
   {
     id: 56,
@@ -639,7 +581,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 85.0,
-    favorite: false,
   },
   {
     id: 57,
@@ -650,7 +591,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 88.0,
-    favorite: false,
   },
   {
     id: 58,
@@ -661,7 +601,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 102.0,
-    favorite: false,
   },
   {
     id: 59,
@@ -672,7 +611,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 100.0,
-    favorite: false,
   },
   {
     id: 60,
@@ -683,7 +621,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 120.0,
-    favorite: false,
   },
   {
     id: 61,
@@ -694,7 +631,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 110.0,
-    favorite: false,
   },
   {
     id: 62,
@@ -705,7 +641,6 @@ export const products = [
     drive: "Manual",
     seats: 5,
     price: 100.0,
-    favorite: false,
   },
   {
     id: 63,
@@ -716,7 +651,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 108.0,
-    favorite: false,
   },
   {
     id: 64,
@@ -727,7 +661,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 66.0,
-    favorite: false,
   },
   {
     id: 65,
@@ -738,7 +671,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 102.0,
-    favorite: false,
   },
   {
     id: 66,
@@ -749,7 +681,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 115.0,
-    favorite: false,
   },
   {
     id: 67,
@@ -760,7 +691,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 110.0,
-    favorite: false,
   },
   {
     id: 68,
@@ -771,7 +701,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 105.0,
-    favorite: false,
   },
   {
     id: 69,
@@ -782,7 +711,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 125.0,
-    favorite: false,
   },
   {
     id: 70,
@@ -793,7 +721,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 110.0,
-    favorite: false,
   },
   {
     id: 71,
@@ -804,7 +731,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 118.0,
-    favorite: false,
   },
   {
     id: 72,
@@ -815,7 +741,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 125.0,
-    favorite: false,
   },
   {
     id: 73,
@@ -826,7 +751,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 112.0,
-    favorite: false,
   },
   {
     id: 74,
@@ -837,7 +761,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 120.0,
-    favorite: false,
   },
   {
     id: 75,
@@ -848,7 +771,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 118.0,
-    favorite: false,
   },
   {
     id: 76,
@@ -859,7 +781,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 115.0,
-    favorite: false,
   },
   {
     id: 77,
@@ -870,7 +791,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 90.0,
-    favorite: false,
   },
   {
     id: 78,
@@ -881,7 +801,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 88.0,
-    favorite: false,
   },
   {
     id: 79,
@@ -892,7 +811,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 85.0,
-    favorite: false,
   },
   {
     id: 80,
@@ -903,7 +821,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 83.0,
-    favorite: false,
   },
   {
     id: 81,
@@ -914,7 +831,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 87.0,
-    favorite: false,
   },
   {
     id: 82,
@@ -925,7 +841,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 90.0,
-    favorite: false,
   },
   {
     id: 83,
@@ -936,7 +851,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 102.0,
-    favorite: false,
   },
   {
     id: 84,
@@ -947,7 +861,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 100.0,
-    favorite: false,
   },
   {
     id: 85,
@@ -958,7 +871,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 140.0,
-    favorite: false,
   },
   {
     id: 86,
@@ -969,7 +881,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 118.0,
-    favorite: false,
   },
   {
     id: 87,
@@ -980,7 +891,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 112.0,
-    favorite: false,
   },
   {
     id: 88,
@@ -991,7 +901,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 130.0,
-    favorite: false,
   },
   {
     id: 89,
@@ -1002,7 +911,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 125.0,
-    favorite: false,
   },
   {
     id: 90,
@@ -1013,7 +921,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 145.0,
-    favorite: false,
   },
   {
     id: 91,
@@ -1024,7 +931,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 120.0,
-    favorite: false,
   },
   {
     id: 92,
@@ -1035,7 +941,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 115.0,
-    favorite: false,
   },
   {
     id: 93,
@@ -1046,7 +951,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 110.0,
-    favorite: false,
   },
   {
     id: 94,
@@ -1057,7 +961,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 108.0,
-    favorite: false,
   },
   {
     id: 95,
@@ -1068,7 +971,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 112.0,
-    favorite: false,
   },
   {
     id: 96,
@@ -1079,7 +981,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 118.0,
-    favorite: false,
   },
   {
     id: 97,
@@ -1090,7 +991,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 115.0,
-    favorite: false,
   },
   {
     id: 98,
@@ -1101,7 +1001,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 125.0,
-    favorite: false,
   },
   {
     id: 99,
@@ -1112,7 +1011,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 140.0,
-    favorite: false,
   },
   {
     id: 100,
@@ -1123,7 +1021,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 145.0,
-    favorite: false,
   },
   {
     id: 101,
@@ -1134,7 +1031,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 130.0,
-    favorite: false,
   },
   {
     id: 102,
@@ -1145,7 +1041,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 135.0,
-    favorite: false,
   },
   {
     id: 103,
@@ -1156,7 +1051,6 @@ export const products = [
     drive: "Automatic",
     seats: 4,
     price: 150.0,
-    favorite: false,
   },
   {
     id: 104,
@@ -1167,7 +1061,6 @@ export const products = [
     drive: "Automatic",
     seats: 6,
     price: 140.0,
-    favorite: false,
   },
   {
     id: 105,
@@ -1178,7 +1071,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 95.0,
-    favorite: false,
   },
   {
     id: 106,
@@ -1189,7 +1081,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 98.0,
-    favorite: false,
   },
   {
     id: 107,
@@ -1200,7 +1091,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 100.0,
-    favorite: false,
   },
   {
     id: 108,
@@ -1211,7 +1101,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 98.0,
-    favorite: false,
   },
   {
     id: 109,
@@ -1222,7 +1111,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 95.0,
-    favorite: false,
   },
   {
     id: 110,
@@ -1233,7 +1121,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 97.0,
-    favorite: false,
   },
   {
     id: 111,
@@ -1244,7 +1131,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 93.0,
-    favorite: false,
   },
   {
     id: 112,
@@ -1255,7 +1141,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 90.0,
-    favorite: false,
   },
   {
     id: 113,
@@ -1266,7 +1151,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 88.0,
-    favorite: false,
   },
   {
     id: 114,
@@ -1277,7 +1161,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 92.0,
-    favorite: false,
   },
   {
     id: 115,
@@ -1288,7 +1171,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 110.0,
-    favorite: false,
   },
   {
     id: 116,
@@ -1299,7 +1181,6 @@ export const products = [
     drive: "Automatic",
     seats: 7,
     price: 130.0,
-    favorite: false,
   },
   {
     id: 117,
@@ -1310,7 +1191,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 140.0,
-    favorite: false,
   },
   {
     id: 118,
@@ -1321,7 +1201,6 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 135.0,
-    favorite: false,
   },
   {
     id: 119,
@@ -1332,7 +1211,6 @@ export const products = [
     drive: "Automatic",
     seats: 4,
     price: 145.0,
-    favorite: false,
   },
   {
     id: 120,
@@ -1343,6 +1221,5 @@ export const products = [
     drive: "Automatic",
     seats: 5,
     price: 130.0,
-    favorite: false,
   },
 ];

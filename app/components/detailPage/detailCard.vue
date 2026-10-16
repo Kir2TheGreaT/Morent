@@ -2,7 +2,7 @@
   <div class="detailCard">
     <div class="topDetailCard">
       <div class="topHalfDetail">
-        <div class="nameDetailCard">{{ product.name }}</div>
+        <h1 class="nameDetailCard">{{ product.name }}</h1>
         <div class="ratingDetailCard">
           <Star></Star>
           <Star></Star>
@@ -12,7 +12,13 @@
           <p>500+ Reviewer</p>
         </div>
       </div>
-      <button class="favoriteDetailCard" @click="toggleFavorite">
+      <button
+        type="button"
+        class="favoriteDetailCard"
+        :aria-pressed="isAdded"
+        :aria-label="isAdded ? 'Remove from favorites' : 'Add to favorites'"
+        @click="toggleFavorite"
+      >
         <component
           :is="isAdded ? Heart_bold : Heart_linear"
           class="heart-iconCar"
@@ -53,7 +59,7 @@
       </div>
       <ButtonRental
         label="Rent Now"
-        @click="goSummary(product.id)"
+        @click="goSummary"
       ></ButtonRental>
     </div>
   </div>
@@ -61,40 +67,26 @@
 
 <script lang="ts" setup>
 import Heart_linear from "../icons/cardsIcons/heart_linear.vue";
+import Heart_bold from "~/components/icons/cardsIcons/heart_bold.vue";
 import Star from "../icons/star.vue";
 import ButtonRental from "../Button-rental.vue";
-import { useRouter } from "vue-router";
 import { useFavorites } from "~/stores/favorites";
-import Heart_bold from "~/components/icons/cardsIcons/heart_bold.vue";
+import type { Product } from "~~/data/products";
 import { computed } from "vue";
 
+const props = defineProps<{
+  product: Product;
+}>();
+
 const router = useRouter();
-const goSummary = (id: number) => {
-  router.push(`/paymentCarRent/${id}`);
+const goSummary = (): void => {
+  router.push(`/paymentCarRent/${props.product.id}`);
 };
 
-const props = defineProps<{
-  product: {
-    id: number;
-    name: string;
-    category: string;
-    image: string;
-    gasoline: number;
-    drive: string;
-    seats: number;
-    price: number;
-    favorite: boolean;
-  };
-}>();
 // избранное
 const favoriteStore = useFavorites();
-const toggleFavorite = () => {
-  favoriteStore.toggleFavorite(props.product.id);
-};
-
-const isAdded = computed(() => {
-  return favoriteStore.isFavorite(props.product.id);
-});
+const toggleFavorite = (): void => favoriteStore.toggleFavorite(props.product.id);
+const isAdded = computed(() => favoriteStore.isFavorite(props.product.id));
 </script>
 
 <style>
@@ -146,6 +138,7 @@ const isAdded = computed(() => {
         gap: 0.375rem;
       }
       .nameDetailCard {
+        margin: 0;
         color: var(--secondary-500);
         font-size: 2rem;
         font-weight: 700;

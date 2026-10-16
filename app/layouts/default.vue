@@ -1,9 +1,8 @@
 <template>
   <div class="layout">
-    <TheToast></TheToast>
     <Header class="header" />
     <main class="content">
-      <NuxtPage />
+      <slot />
     </main>
     <Footer class="footerLayout" v-if="!$route.meta.hideFooter" />
   </div>
@@ -12,25 +11,8 @@
 <script lang="ts" setup>
 import Footer from "~/components/Footer.vue";
 import Header from "~/components/Header.vue";
-import { ref, provide, onMounted } from "vue";
-import TheToast from "~/components/TheToast.vue";
-onMounted(() => {
-  const saveTheme = localStorage.getItem("theme");
-  const systemPreferDark = window.matchMedia(
-    "(prefers-color-scheme: dark)",
-  ).matches;
 
-  if (saveTheme === "dark" || (!saveTheme && systemPreferDark)) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-});
-
-const isSidebarOpen = ref(false);
-const toggleSidebar = () => (isSidebarOpen.value = !isSidebarOpen.value);
-
-provide("sidebarContext", { isSidebarOpen, toggleSidebar });
+provideSidebar();
 </script>
 
 <style>
@@ -38,6 +20,7 @@ provide("sidebarContext", { isSidebarOpen, toggleSidebar });
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
 }
 
@@ -51,7 +34,7 @@ provide("sidebarContext", { isSidebarOpen, toggleSidebar });
 
 .header {
   top: 0;
-  z-index: 100;
+  z-index: var(--z-header);
 
   width: 100%;
   max-width: 1410px;

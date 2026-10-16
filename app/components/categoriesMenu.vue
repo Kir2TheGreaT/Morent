@@ -1,55 +1,65 @@
 <template>
   <div class="mainPartCategories">
     <div class="typeCategoriesMenu">
-      <div class="typeCategory">
-        <h5>Type</h5>
+      <fieldset class="typeCategory">
+        <legend>Type</legend>
         <div class="categoryCarMenu">
-          <div
+          <label
             v-for="item in typeCategories"
             :key="item.type"
             class="categoryItem"
-            @click="toggleType(item.type)"
-            :class="{ active: selectedTypes.includes(item.type) }"
+            :class="{ active: filters.types.includes(item.type) }"
           >
-            <div
+            <input
+              type="checkbox"
+              class="visually-hidden"
+              :value="item.type"
+              v-model="filters.types"
+            />
+            <span
               class="checkbox-box"
-              :class="{ 'is-active': selectedTypes.includes(item.type) }"
+              :class="{ 'is-active': filters.types.includes(item.type) }"
             >
               <Transition name="scale">
-                <TickSquare v-if="selectedTypes.includes(item.type)" />
+                <TickSquare v-if="filters.types.includes(item.type)" />
               </Transition>
-            </div>
+            </span>
             {{ item.type }}
-            <div class="quantity">({{ item.count }})</div>
-          </div>
+            <span class="quantity">({{ item.count }})</span>
+          </label>
         </div>
-      </div>
+      </fieldset>
     </div>
     <div class="capasityCategoriesMenu">
-      <div class="typeCategory2">
-        <h5>Capacity</h5>
-        <div
+      <fieldset class="typeCategory2">
+        <legend>Capacity</legend>
+        <label
           class="categoryCarMenu2"
           v-for="item in capacityCategories"
           :key="item.seats"
-          @click="toggleCapacity(item.seats)"
-          :class="{ active: selectedCapacities.includes(item.seats) }"
+          :class="{ active: filters.capacities.includes(item.seats) }"
         >
-          <div
+          <input
+            type="checkbox"
+            class="visually-hidden"
+            :value="item.seats"
+            v-model="filters.capacities"
+          />
+          <span
             class="checkbox-box"
-            :class="{ 'is-active': selectedCapacities.includes(item.seats) }"
+            :class="{ 'is-active': filters.capacities.includes(item.seats) }"
           >
             <Transition name="scale">
-              <TickSquare v-if="selectedCapacities.includes(item.seats)" />
+              <TickSquare v-if="filters.capacities.includes(item.seats)" />
             </Transition>
-          </div>
+          </span>
           {{ item.seats }} Person
-          <div class="quantity">({{ item.count }})</div>
-        </div>
-      </div>
+          <span class="quantity">({{ item.count }})</span>
+        </label>
+      </fieldset>
     </div>
     <div class="priceCategoriesMenu">
-      <h5>PRICE</h5>
+      <h2 class="priceTitle">PRICE</h2>
       <div class="priceRange">
         <div class="range-container">
           <div class="range-track"></div>
@@ -57,15 +67,16 @@
           <input
             type="range"
             min="0"
-            max="200"
+            :max="MAX_PRICE"
             step="1"
-            v-model.number="maxPrice"
+            aria-label="Maximum price per day"
+            v-model.number="filters.price"
             class="slider"
           />
         </div>
 
         <div class="priceValues">
-          <span>Max. ${{ maxPrice }}.00</span>
+          <span>Max. ${{ filters.price }}.00</span>
         </div>
       </div>
     </div>
@@ -73,94 +84,29 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from "vue";
-
-export interface Product {
-  id: number;
-  name: string;
-  category: string;
-  image: string;
-  gasoline: number;
-  drive: string;
-  seats: number;
-  price: number;
-  favorite: boolean;
-}
-
-import { products } from "~~/data/products.ts";
+import { computed } from "vue";
+import { products } from "~~/data/products";
 import TickSquare from "./icons/tickSquare.vue";
 
-// массив категорий
+// Состояние фильтров общее (useState), поэтому десктопное и мобильное меню синхронны
+// и не сбрасываются при открытии/закрытии сайдбара.
+const { filters } = useCarFilters();
+
 const typeCategories = computed<{ type: string; count: number }[]>(() => {
   const map = new Map<string, number>();
-  products.forEach((p: Product) => {
-    map.set(p.category, (map.get(p.category) || 0) + 1);
-  });
-  return Array.from(map.entries()).map(([type, count]) => ({ type, count }));
+  products.forEach((p) => map.set(p.category, (map.get(p.category) || 0) + 1));
+  return Array.from(map, ([type, count]) => ({ type, count }));
 });
 
 const capacityCategories = computed<{ seats: number; count: number }[]>(() => {
   const map = new Map<number, number>();
-  products.forEach((p: Product) => {
-    map.set(p.seats, (map.get(p.seats) || 0) + 1);
-  });
-  return Array.from(map.entries())
-    .map(([seats, count]) => ({ seats, count }))
-    .sort((a, b) => a.seats - b.seats);
+  products.forEach((p) => map.set(p.seats, (map.get(p.seats) || 0) + 1));
+  return Array.from(map, ([seats, count]) => ({ seats, count })).sort(
+    (a, b) => a.seats - b.seats,
+  );
 });
 
-// полоса цены
-const maxPrice = ref<number>(200);
-
-const fillWidth = computed<number>(() => {
-  return (maxPrice.value / 200) * 100;
-});
-
-// отправка данных в родительский и категоризация
-const emit = defineEmits<{
-  (
-    e: "updateFilters",
-    payload: {
-      types: string[];
-      capacities: number[];
-      price: number;
-    },
-  ): void;
-}>();
-
-const selectedTypes = ref<string[]>([]);
-const selectedCapacities = ref<number[]>([]);
-
-const toggleType = (type: string): void => {
-  if (selectedTypes.value.includes(type)) {
-    selectedTypes.value = selectedTypes.value.filter((t) => t !== type);
-  } else {
-    selectedTypes.value.push(type);
-  }
-};
-
-const toggleCapacity = (seats: number | string): void => {
-  const s = Number(seats);
-  const index = selectedCapacities.value.indexOf(s);
-
-  if (index > -1) {
-    selectedCapacities.value.splice(index, 1);
-  } else {
-    selectedCapacities.value.push(s);
-  }
-};
-
-watch(
-  [selectedTypes, selectedCapacities, maxPrice],
-  () => {
-    emit("updateFilters", {
-      types: [...selectedTypes.value],
-      capacities: [...selectedCapacities.value],
-      price: maxPrice.value,
-    });
-  },
-  { deep: true, immediate: true },
-);
+const fillWidth = computed<number>(() => (filters.value.price / MAX_PRICE) * 100);
 </script>
 
 <style scoped>
@@ -406,5 +352,44 @@ watch(
 .scale-leave-to {
   opacity: 0;
   transform: scale(0.5);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+legend {
+  padding: 0;
+  margin: 0 0 1.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--secondary-300);
+}
+.priceTitle {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--secondary-300);
+}
+.categoryItem,
+.categoryCarMenu2 {
+  cursor: pointer;
+  position: relative;
+}
+.visually-hidden:focus-visible + .checkbox-box {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
 }
 </style>

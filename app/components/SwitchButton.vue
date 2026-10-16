@@ -6,7 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <button class="switch_button">
+  <button type="button" class="switch_button" aria-label="Swap pick-up and drop-off" :aria-pressed="active">
     <swap :active="active" />
   </button>
 </template>

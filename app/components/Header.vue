@@ -1,50 +1,68 @@
 <template>
   <header class="header" @click="handleHeaderClick">
     <div class="main-header">
-      <button @click.stop="sidebarNav.toggleSidebar()">
-        <menu-icon class="menu-icon" v-if="isSpecial" />
+      <button
+        v-if="isSpecial"
+        type="button"
+        aria-label="Toggle menu"
+        :aria-expanded="isSidebarOpen"
+        @click.stop="toggleSidebar()"
+      >
+        <menu-icon class="menu-icon" />
       </button>
-      <h1 class="Logo" @click="goMain">MORENT</h1>
+      <NuxtLink to="/" class="Logo" aria-label="MORENT — home">MORENT</NuxtLink>
 
       <div class="headerImage">
         <div class="headerIcons">
           <button
+            type="button"
             class="favorite-nav-btn"
             :class="{
-              'is-active': favoritesStore.favoritesIds.length > 0,
-              'is-visible': favoritesStore.favoritesIds.length > 0 || isDesktop,
+              'is-active': favoritesStore.count > 0,
+              'is-visible': favoritesStore.count > 0 || isDesktop,
             }"
+            :aria-label="`Favorites (${favoritesStore.count})`"
+            :aria-expanded="isFavoritesOpen"
             @click.stop="isFavoritesOpen = !isFavoritesOpen"
             ref="favoritesButton"
           >
-            <div class="icon-wrap">
+            <span class="icon-wrap">
               <heart_bold class="heart-icon" />
-              <span v-if="favoritesStore.favoritesIds.length > 0" class="badge">
-                {{ favoritesStore.favoritesIds.length }}
+              <span v-if="favoritesStore.count > 0" class="badge">
+                {{ favoritesStore.count }}
               </span>
-            </div>
-            <favorites-dropdown
-              :is-open="isFavoritesOpen"
-              @close="isFavoritesOpen = false"
-              :anchor="favoritesButton"
-            />
+            </span>
           </button>
+          <favorites-dropdown
+            :is-open="isFavoritesOpen"
+            @close="isFavoritesOpen = false"
+            :anchor="favoritesButton"
+          />
           <button
+            type="button"
             class="notificationButton"
+            aria-label="Notifications"
             :class="{ 'is-visible': hasNotifications || isDesktop }"
           >
             <notification />
           </button>
           <button
+            type="button"
             class="settingsButton"
+            aria-label="Account settings"
             :class="{ 'is-visible': hasSettingsAlert || isDesktop }"
-            @click="goAccount"
+            @click="goToAccount"
           >
             <settings2 />
           </button>
         </div>
-        <button class="headerImageButton" @click="goToProfile()">
-          <img :src="userAvatar" alt="User Profile" />
+        <button
+          type="button"
+          class="headerImageButton"
+          :aria-label="isAuthenticated ? 'Open account' : 'Log in'"
+          @click="goToAccount"
+        >
+          <img :src="userAvatar" alt="" />
         </button>
       </div>
 
@@ -54,10 +72,12 @@
             class="search-icon"
             @click="focusSearch"
             style="cursor: pointer"
+            aria-hidden="true"
           />
           <input
-            type="text"
+            type="search"
             placeholder="Search something here"
+            aria-label="Search cars"
             v-model="searchQuery"
             ref="searchInput"
           />
@@ -70,24 +90,27 @@
                 :style="dropdownStyle"
                 ref="dropdownRef"
               >
-                <div
+                <button
                   v-for="product in filteredProducts"
                   :key="product.id"
+                  type="button"
                   class="search-item"
-                  @click="
-                    router.push(`/detailCarRent/${product.id}`);
-                    searchQuery = '';
-                  "
+                  @click="openProduct(product.id)"
                 >
-                  <img :src="product.image" alt="" class="search-item-img" />
-                  <div class="search-item-info">
+                  <img
+                    :src="product.image"
+                    alt=""
+                    class="search-item-img"
+                    loading="lazy"
+                  />
+                  <span class="search-item-info">
                     <span class="search-item-name">{{ product.name }}</span>
                     <span class="search-item-category">{{
                       product.category
                     }}</span>
-                  </div>
+                  </span>
                   <span class="search-item-price">{{ product.price }}</span>
-                </div>
+                </button>
 
                 <div
                   v-if="filteredProducts.length === 0"
@@ -99,17 +122,21 @@
             </Transition>
           </Teleport>
         </div>
-        <button class="settingsIcon">
-          <linear-filter class="settings-icon" @click="goCategory" />
-        </button>
+        <NuxtLink
+          to="/categoryCarRent"
+          class="settingsIcon"
+          aria-label="Filters and categories"
+        >
+          <linear-filter class="settings-icon" />
+        </NuxtLink>
       </div>
     </div>
-    <div v-if="width >= 1440" class="header-car-container">
+    <div v-if="screenWidth >= 1440" class="header-car-container">
       <img
+        ref="carImage"
         src="/cars/Koenigsegg.png"
-        alt="Koenigsegg"
+        alt=""
         class="koenigsegg-car"
-        :style="{ transform: `translateX(${carX}px)` }"
       />
     </div>
   </header>
@@ -121,202 +148,141 @@ import LinearFilter from "~/components/icons/headerIcons/linear-filter.vue";
 import Settings2 from "~/components/icons/headerIcons/settings2.vue";
 import Notification from "~/components/icons/headerIcons/notification.vue";
 import Heart_bold from "~/components/icons/cardsIcons/heart_bold.vue";
-import { useRouter, useRoute } from "vue-router";
-import { useFavorites } from "~/stores/favorites";
-import FavoritesDropdown from "./FavoritesDropdown.vue";
 import MenuIcon from "~/components/icons/headerIcons/menu-icon.vue";
+import FavoritesDropdown from "./FavoritesDropdown.vue";
+import { useFavorites } from "~/stores/favorites";
 import { products } from "~~/data/products";
-import {
-  ref,
-  computed,
-  inject,
-  onMounted,
-  onUnmounted,
-  watch,
-  type Ref,
-} from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 
 const router = useRouter();
-
-// Страница логина или АДмина
-const authCookie = useCookie<boolean>("auth-logged-in", {
-  default: () => false,
-});
-
-const handleAuthNavigation = (): void => {
-  if (authCookie.value) {
-    router.push("/adminCarRent");
-  } else {
-    router.push("/loginPage");
-  }
-};
-
-const goToProfile = (): void => handleAuthNavigation();
-const goAccount = (): void => handleAuthNavigation();
-
-const isAuthenticated = useCookie<boolean>("auth-logged-in");
-
-const userAvatar = computed<string>(() => {
-  return isAuthenticated.value ? "/noImage.webp" : "/Image.svg";
-});
-
-// изменение хэдера на определенных страницах
 const route = useRoute();
 
+// авторизация
+const isAuthenticated = useCookie<boolean | string | null>("auth-logged-in");
+
+const goToAccount = (): void => {
+  router.push(isAuthenticated.value ? "/adminCarRent" : "/loginPage");
+};
+
+const userAvatar = computed<string>(() =>
+  isAuthenticated.value ? "/noImage.webp" : "/Image.svg",
+);
+
+// изменение хэдера на определённых страницах
 const isSpecial = computed<boolean>(() => route.meta.isSpecialHeader === true);
+
+const { isSidebarOpen, closeSidebar, toggleSidebar } = useSidebar();
+
+const handleHeaderClick = (): void => {
+  if (isSidebarOpen.value) closeSidebar();
+};
 
 // избранное
 const favoritesStore = useFavorites();
 const isFavoritesOpen = ref<boolean>(false);
+const favoritesButton = ref<HTMLElement | null>(null);
 
-const goMain = (): void => {
-  router.push("/");
-};
+// ширина экрана
+const { screenWidth } = useScreenWidth();
+const isDesktop = computed<boolean>(() => screenWidth.value >= 950);
 
-interface SidebarContext {
-  toggleSidebar: () => void;
-  isSidebarOpen: Ref<boolean>;
-}
-
-const sidebarNav = inject<SidebarContext | undefined>("sidebarContext");
+// кнопки при наличии контента на мобильной версии
+const hasNotifications = ref<boolean>(false);
+const hasSettingsAlert = ref<boolean>(false);
 
 // поиск в заголовке
 const searchQuery = ref<string>("");
+const searchInput = ref<HTMLInputElement | null>(null);
+const searchContainer = ref<HTMLElement | null>(null);
+const dropdownRef = ref<HTMLElement | null>(null);
+const isDropdownVisible = ref<boolean>(false);
 
 const filteredProducts = computed(() => {
-  if (!searchQuery.value) return [];
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) return [];
 
   return products.filter(
     (product) =>
-      product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchQuery.value.toLowerCase()),
+      product.name.toLowerCase().includes(query) ||
+      product.category.toLowerCase().includes(query),
   );
 });
 
-const searchInput = ref<HTMLInputElement | null>(null);
+const focusSearch = (): void => searchInput.value?.focus();
 
-const focusSearch = (): void => {
-  searchInput.value?.focus();
-};
-
-const searchContainer = ref<HTMLElement | null>(null);
-
-const dropdownStyle = ref<{
-  top: string;
-  left: string;
-  width: string;
-}>({
-  top: "0px",
-  left: "0px",
-  width: "0px",
-});
+const dropdownStyle = ref({ top: "0px", left: "0px", width: "0px" });
 
 const updateDropdownPosition = (): void => {
-  if (searchContainer.value) {
-    const rect = searchContainer.value.getBoundingClientRect();
-
-    dropdownStyle.value = {
-      top: `${rect.bottom + window.scrollY + 8}px`,
-      left: `${rect.left + window.scrollX}px`,
-      width: `${rect.width}px`,
-    };
-  }
+  if (!searchContainer.value) return;
+  const rect = searchContainer.value.getBoundingClientRect();
+  dropdownStyle.value = {
+    top: `${rect.bottom + window.scrollY + 8}px`,
+    left: `${rect.left + window.scrollX}px`,
+    width: `${rect.width}px`,
+  };
 };
-
-watch(searchQuery, (value: string) => {
-  if (value.length > 0) {
-    setTimeout(updateDropdownPosition, 0);
-  }
-});
-
-onMounted(() => {
-  updateWidth();
-  window.addEventListener("resize", updateDropdownPosition);
-  window.addEventListener("scroll", updateDropdownPosition);
-  window.addEventListener("scroll", closeSearch, { passive: true });
-  window.addEventListener("click", handleClickOutside);
-  window.addEventListener("resize", updateWidth);
-  window.addEventListener("mousemove", handleMouseMove, {
-    passive: true,
-  });
-});
-
-onUnmounted(() => {
-  window.removeEventListener("resize", updateDropdownPosition);
-  window.removeEventListener("scroll", updateDropdownPosition);
-  window.removeEventListener("scroll", closeSearch);
-  window.removeEventListener("click", handleClickOutside);
-  window.removeEventListener("resize", updateWidth);
-  window.removeEventListener("mousemove", handleMouseMove);
-});
-
-// автозакрытие поиска
-const isDropdownVisible = ref<boolean>(false);
-const dropdownRef = ref<HTMLElement | null>(null);
 
 const closeSearch = (): void => {
   isDropdownVisible.value = false;
 };
 
+const openProduct = (id: number): void => {
+  router.push(`/detailCarRent/${id}`);
+  searchQuery.value = "";
+};
+
 const handleClickOutside = (event: MouseEvent): void => {
-  const target = event.target as HTMLElement;
-
-  const clickInsideSearch = searchContainer.value?.contains(target);
-  const clickInsideDropdown = dropdownRef.value?.contains(target);
-
-  if (!clickInsideSearch && !clickInsideDropdown) {
+  const target = event.target as Node;
+  if (
+    !searchContainer.value?.contains(target) &&
+    !dropdownRef.value?.contains(target)
+  ) {
     closeSearch();
   }
 };
 
 watch(searchQuery, (value: string) => {
+  isDropdownVisible.value = value.length > 0;
   if (value.length > 0) {
-    isDropdownVisible.value = true;
-    setTimeout(updateDropdownPosition, 0);
-  } else {
-    isDropdownVisible.value = false;
+    nextTick(updateDropdownPosition);
   }
 });
 
-const goCategory = (): void => {
-  router.push("/categoryCarRent");
-};
-
-//Кнопки при наличии контента на мобильной версии
-const hasNotifications = ref<boolean>(false);
-const hasSettingsAlert = ref<boolean>(false);
-
-const width = ref<number>(0);
-
-const updateWidth = (): void => {
-  width.value = window.innerWidth;
-};
-
-const isDesktop = computed<boolean>(() => width.value >= 950);
-
-// позиционированние избранного
-const favoritesButton = ref<HTMLElement | null>(null);
-
-// машинка в хедере
-const carX = ref<number>(0);
+// машинка в хедере: двигаем через rAF и прямую запись transform,
+// чтобы не перерисовывать компонент на каждый mousemove
+const carImage = ref<HTMLElement | null>(null);
 const carWidth = 300;
+let rafId = 0;
 
 const handleMouseMove = (event: MouseEvent): void => {
-  if (width.value >= 1440) {
-    const maxScroll = window.innerWidth - carWidth;
+  if (!carImage.value || rafId) return;
+  rafId = requestAnimationFrame(() => {
+    rafId = 0;
+    if (!carImage.value) return;
     const ratio = event.clientX / window.innerWidth;
-    carX.value = ratio * maxScroll;
-  }
+    carImage.value.style.transform = `translateX(${ratio * (window.innerWidth - carWidth)}px)`;
+  });
 };
 
-// работа сайдбара
-const sidebarContext = inject<SidebarContext | undefined>("sidebarContext");
-
-const handleHeaderClick = (): void => {
-  if (sidebarContext?.isSidebarOpen.value) {
-    sidebarContext.isSidebarOpen.value = false;
-  }
+const onScroll = (): void => {
+  updateDropdownPosition();
+  closeSearch();
 };
+
+onMounted(() => {
+  window.addEventListener("resize", updateDropdownPosition);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("click", handleClickOutside);
+  window.addEventListener("mousemove", handleMouseMove, { passive: true });
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateDropdownPosition);
+  window.removeEventListener("scroll", onScroll);
+  window.removeEventListener("click", handleClickOutside);
+  window.removeEventListener("mousemove", handleMouseMove);
+  cancelAnimationFrame(rafId);
+});
 </script>
 
 <style>
@@ -855,5 +821,20 @@ const handleHeaderClick = (): void => {
 .slide-fade-leave-to {
   transform: translateY(-10px);
   opacity: 0;
+}
+.Logo {
+  display: inline-block;
+  text-decoration: none;
+}
+button.search-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+a.settingsIcon {
+  display: inline-flex;
+  text-decoration: none;
+  color: inherit;
 }
 </style>

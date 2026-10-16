@@ -10,7 +10,15 @@
       <div class="confirmationSteps">Step 4 of 4</div>
     </div>
     <div class="bottomConfirmation">
-      <div class="bottomConfirmation1" @click="toggleOption('marketing')">
+      <div
+        class="bottomConfirmation1"
+        role="checkbox"
+        tabindex="0"
+        :aria-checked="agreements.includes('marketing')"
+        @click="toggleOption('marketing')"
+        @keydown.enter.prevent="toggleOption('marketing')"
+        @keydown.space.prevent="toggleOption('marketing')"
+      >
         <div class="nameConfirmation">
           <div class="selection-wrapper">
             <TickSquare
@@ -21,11 +29,19 @@
           </div>
           <p>
             I agree with sending an Marketing and newsletter emails. No spam,
-            promissed!
+            promised!
           </p>
         </div>
       </div>
-      <div class="bottomConfirmation2" @click="toggleOption('terms')">
+      <div
+        class="bottomConfirmation2"
+        role="checkbox"
+        tabindex="0"
+        :aria-checked="agreements.includes('terms')"
+        @click="toggleOption('terms')"
+        @keydown.enter.prevent="toggleOption('terms')"
+        @keydown.space.prevent="toggleOption('terms')"
+      >
         <div class="nameConfirmation">
           <div class="selection-wrapper">
             <TickSquare v-if="agreements.includes('terms')" class="blue-icon" />
@@ -55,14 +71,16 @@
 import ButtonRental from "../../Button-rental.vue";
 import TickSquare from "../../icons/tickSquare.vue";
 import { ref } from "vue";
-import { usePaymentStore } from "@/stores/toast";
+import { usePaymentStore } from "@/stores/payment";
+import { useToastStore } from "@/stores/toast";
 import { useRentalStore } from "@/stores/rental";
 
 const store = usePaymentStore();
+const toast = useToastStore();
 const rentalStore = useRentalStore();
 
 const isSubmitting = ref<boolean>(false);
-const agreements = ref<string[]>([]);
+const agreements = ref<AgreementOption[]>([]);
 
 type AgreementOption = "marketing" | "terms";
 
@@ -75,7 +93,7 @@ const toggleOption = (option: AgreementOption): void => {
   }
 };
 
-// карта
+// Алгоритм Луна: каждую вторую цифру справа удваиваем, если результат > 9 — вычитаем 9
 function isValidCardNumber(cardNumber: string): boolean {
   const digits = cardNumber.replace(/\D/g, "");
 
@@ -85,11 +103,11 @@ function isValidCardNumber(cardNumber: string): boolean {
   let shouldDouble = false;
 
   for (let i = digits.length - 1; i >= 0; i--) {
-    let digit = parseInt(digits[i]);
+    let digit = Number(digits[i]);
 
     if (shouldDouble) {
       digit *= 2;
-      if (digit > 12) digit -= 12;
+      if (digit > 9) digit -= 9;
     }
 
     sum += digit;
@@ -108,33 +126,32 @@ function isValidExpiration(date: string): boolean {
 
   if (month < 1 || month > 12) return false;
 
-  const now = new Date();
-  const expiration = new Date(year, month);
-
-  return expiration > now;
+  // карта действует до конца указанного месяца: new Date(year, month) — первое число следующего
+  return new Date(year, month) > new Date();
 }
 
 function isValidCVC(cvc: string): boolean {
   return /^\d{3,4}$/.test(cvc);
 }
 
+const toDate = (date: string, time: string): Date => new Date(`${date} ${time}`);
+
 const handleRentNow = async (): Promise<void> => {
+  if (isSubmitting.value) return;
+
   const b = store.billing;
   const p = store.payment;
   const r = rentalStore;
 
   // 1. Проверка личных данных (Шаг 1)
   if (!b.name || !b.phone || !b.city || !b.address) {
-    store.addToast(
-      "Ошибка в Шаге 1: Заполните все поля Billing Info",
-      "warning",
-    );
+    toast.addToast("Ошибка в Шаге 1: Заполните все поля Billing Info", "warning");
     return;
   }
 
   // 2. Проверка данных аренды (Шаг 2)
   if (!r.pickup.location || !r.pickup.date || !r.pickup.time) {
-    store.addToast(
+    toast.addToast(
       "Ошибка в Шаге 2: Укажите данные Pickup (место, дата, время)",
       "warning",
     );
@@ -142,9 +159,23 @@ const handleRentNow = async (): Promise<void> => {
   }
 
   if (!r.dropoff.location || !r.dropoff.date || !r.dropoff.time) {
-    store.addToast(
+    toast.addToast(
       "Ошибка в Шаге 2: Укажите данные Drop-Off (место, дата, время)",
       "warning",
+    );
+    return;
+  }
+
+  const pickupAt = toDate(r.pickup.date, r.pickup.time);
+  const dropoffAt = toDate(r.dropoff.date, r.dropoff.time);
+  if (
+    !Number.isNaN(pickupAt.getTime()) &&
+    !Number.isNaN(dropoffAt.getTime()) &&
+    dropoffAt <= pickupAt
+  ) {
+    toast.addToast(
+      "Ошибка в Шаге 2: Drop-Off должен быть позже Pick-Up",
+      "error",
     );
     return;
   }
@@ -152,35 +183,29 @@ const handleRentNow = async (): Promise<void> => {
   // 3. Проверка оплаты (Шаг 3)
   if (p.method === "card") {
     if (!p.cardNumber || !p.cardHolder || !p.expirationDate || !p.cvc) {
-      store.addToast(
-        "Ошибка в Шаге 3: Заполните данные банковской карты",
-        "warning",
-      );
+      toast.addToast("Ошибка в Шаге 3: Заполните данные банковской карты", "warning");
       return;
     }
 
     if (!isValidCardNumber(p.cardNumber)) {
-      store.addToast("Шаг 3: Неверный номер карты", "error");
+      toast.addToast("Шаг 3: Неверный номер карты", "error");
       return;
     }
 
     if (!isValidExpiration(p.expirationDate)) {
-      store.addToast(
-        "Шаг 3: Срок действия карты истек или указан неверно",
-        "error",
-      );
+      toast.addToast("Шаг 3: Срок действия карты истек или указан неверно", "error");
       return;
     }
 
     if (!isValidCVC(p.cvc)) {
-      store.addToast("Шаг 3: Некорректный CVC код", "error");
+      toast.addToast("Шаг 3: Некорректный CVC код", "error");
       return;
     }
   }
 
   // 4. Согласие с условиями (Шаг 4)
   if (!agreements.value.includes("terms")) {
-    store.addToast(
+    toast.addToast(
       "Шаг 4: Вы должны принять условия и политику конфиденциальности",
       "warning",
     );
@@ -190,18 +215,15 @@ const handleRentNow = async (): Promise<void> => {
   isSubmitting.value = true;
 
   try {
-    const finalOrder = {
-      rental: rentalStore.$state,
-      billing: store.billing,
-      payment: store.payment,
-    };
-
-    console.log("Отправка заказа:", finalOrder);
-
+    // Демо: запрос на сервер имитируется. Платёжные данные (номер карты, CVC) никуда не логируются.
     await new Promise<void>((resolve) => setTimeout(resolve, 2000));
-    store.addToast("Бронирование успешно завершено!", "success");
-  } catch (e: unknown) {
-    store.addToast("Произошла ошибка при соединении с сервером", "error");
+
+    toast.addToast("Бронирование успешно завершено!", "success");
+    // Очищаем чувствительные данные формы после «отправки»
+    store.resetCheckout();
+    agreements.value = [];
+  } catch {
+    toast.addToast("Произошла ошибка при соединении с сервером", "error");
   } finally {
     isSubmitting.value = false;
   }

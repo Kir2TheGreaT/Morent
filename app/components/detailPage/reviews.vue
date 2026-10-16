@@ -1,14 +1,16 @@
 <template>
-  <div ref="reviewsSection" class="mainHeadReviews">
-    <div class="headerReviews">
+  <section ref="reviewsSection" class="mainHeadReviews">
+    <h2 class="headerReviews">
       Reviews
-      <div class="badgeReviews">
+      <span class="badgeReviews">
         <span>{{ reviews.length }}</span>
-      </div>
-    </div>
+      </span>
+    </h2>
 
-    <div class="addReviewForm">
+    <form class="addReviewForm" @submit.prevent="submitReview">
+      <label for="review-text" class="visually-hidden">Your review</label>
       <textarea
+        id="review-text"
         v-model="newReviewText"
         placeholder="Write your review..."
         class="reviewArea"
@@ -16,32 +18,37 @@
 
       <div class="formActions">
         <div class="ratingSelect">
-          <span>Rating:</span>
-          <select v-model="newReviewRating">
+          <label for="review-rating">Rating:</label>
+          <select id="review-rating" v-model="newReviewRating">
             <option v-for="n in 5" :key="n" :value="n">{{ n }} Stars</option>
           </select>
         </div>
 
         <button
-          @click="submitReview"
+          type="submit"
           :disabled="!newReviewText.trim()"
           class="postButton"
         >
           Post Review
         </button>
       </div>
-    </div>
+    </form>
 
     <div class="mainReviews">
       <TransitionGroup name="list">
-        <div
+        <article
           v-for="review in visibleReviews"
           :key="review.id"
           class="oneReview"
         >
           <div class="topOneReview">
             <div class="profile">
-              <img :src="review.avatar" alt="" class="avatarProfile" />
+              <img
+                :src="review.avatar"
+                alt=""
+                class="avatarProfile"
+                loading="lazy"
+              />
               <div class="userReviewInfotmation">
                 <div class="nameInformation">{{ review.name }}</div>
                 <div class="userInformation">{{ review.position }}</div>
@@ -52,14 +59,19 @@
               <div class="dateReview">{{ review.date }}</div>
 
               <button
-                v-if="review.name === 'You'"
-                @click="removeReview(review.id)"
+                v-if="review.isOwn"
+                type="button"
+                @click="reviewsStore.removeReview(review.id)"
                 class="deleteBtn"
               >
                 Delete
               </button>
 
-              <div class="ratingStars">
+              <div
+                class="ratingStars"
+                role="img"
+                :aria-label="`Rating: ${review.rating} out of 5`"
+              >
                 <Star v-for="i in review.rating" :key="i"></Star>
               </div>
             </div>
@@ -68,39 +80,34 @@
           <div class="textReview">
             <p>{{ review.text }}</p>
           </div>
-        </div>
+        </article>
       </TransitionGroup>
     </div>
 
     <div class="showAll" v-if="reviews.length > 3">
       <div class="showAllButton" @click="handleToggle" ref="bottomAnchor">
-        <button>
+        <button type="button" :aria-expanded="isExpanded">
           <span class="showAllText">
             {{ isExpanded ? "Hide" : "Show All" }}
           </span>
         </button>
-        <ArrowDown :style="arrowStyle" />
+        <ArrowDown :style="arrowStyle" aria-hidden="true" />
       </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, nextTick } from "vue";
-import type { Ref } from "vue";
 import ArrowDown from "../icons/arrow-down.vue";
 import Star from "../icons/star.vue";
-import { reviews, addReview, removeReview } from "@/stores/reviews";
+import { useReviewsStore, type Review } from "@/stores/reviews";
 
-interface Review {
-  id: number | string;
-  name: string;
-  position: string;
-  avatar: string;
-  date: string;
-  rating: number;
-  text: string;
-}
+const props = defineProps<{
+  carId: number;
+}>();
+
+const reviewsStore = useReviewsStore();
 
 const reviewsSection = ref<HTMLElement | null>(null);
 const bottomAnchor = ref<HTMLElement | null>(null);
@@ -109,9 +116,11 @@ const isExpanded = ref<boolean>(false);
 const newReviewText = ref<string>("");
 const newReviewRating = ref<number>(5);
 
-const visibleReviews = computed<Review[]>(() => {
-  return isExpanded.value ? reviews.value : reviews.value.slice(0, 3);
-});
+const reviews = computed<Review[]>(() => reviewsStore.forCar(props.carId));
+
+const visibleReviews = computed<Review[]>(() =>
+  isExpanded.value ? reviews.value : reviews.value.slice(0, 3),
+);
 
 const arrowStyle = computed<Record<string, string>>(() => ({
   transform: isExpanded.value ? "rotate(180deg)" : "rotate(0deg)",
@@ -119,29 +128,21 @@ const arrowStyle = computed<Record<string, string>>(() => ({
 }));
 
 const submitReview = (): void => {
-  if (newReviewText.value.trim()) {
-    addReview(newReviewText.value, newReviewRating.value);
-    newReviewText.value = "";
-    newReviewRating.value = 5;
-  }
+  const text = newReviewText.value.trim();
+  if (!text) return;
+
+  reviewsStore.addReview(props.carId, text, newReviewRating.value);
+  newReviewText.value = "";
+  newReviewRating.value = 5;
 };
 
 const handleToggle = async (): Promise<void> => {
-  if (isExpanded.value) {
-    isExpanded.value = false;
-    await nextTick();
-    reviewsSection.value?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  } else {
-    isExpanded.value = true;
-    await nextTick();
-    bottomAnchor.value?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  }
+  isExpanded.value = !isExpanded.value;
+  await nextTick();
+  (isExpanded.value ? bottomAnchor : reviewsSection).value?.scrollIntoView({
+    behavior: "smooth",
+    block: isExpanded.value ? "end" : "start",
+  });
 };
 </script>
 
@@ -151,6 +152,7 @@ const handleToggle = async (): Promise<void> => {
   border-radius: 10px;
 
   .headerReviews {
+    margin: 0;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -197,7 +199,6 @@ const handleToggle = async (): Promise<void> => {
       font-size: 0.875rem;
       font-family: inherit;
       resize: none;
-      outline: none;
       @media (min-width: 1px) and (max-width: 1280px) {
         width: 92%;
       }
@@ -430,5 +431,13 @@ const handleToggle = async (): Promise<void> => {
 .list-leave-to {
   opacity: 0;
   transform: translateY(20px);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 </style>

@@ -32,7 +32,7 @@ const stats = computed(() => {
   return Object.keys(counts)
     .map((key) => ({
       name: key,
-      count: counts[key],
+      count: counts[key] ?? 0,
       color: categoryColors[key] || "#CBD5E1",
     }))
     .sort((a, b) => b.count - a.count)
@@ -75,11 +75,15 @@ const chartOptions = {
   <div class="mainChartPage">
     <div class="headerChart">
       <div class="nameChartContainer">Top 5 Car Rental</div>
-      <button class="moreBtn">•••</button>
+      <button type="button" class="moreBtn" aria-label="More options">•••</button>
     </div>
     <div class="centerChart">
       <div class="chartContainer">
-        <Doughnut :data="chartData" :options="chartOptions" />
+        <Doughnut
+          :data="chartData"
+          :options="chartOptions"
+          aria-label="Rentals by car category"
+        />
         <div class="center">
           <p class="totalValue">{{ totalCount }}</p>
           <p class="label">Rental Car</p>

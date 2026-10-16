@@ -2,14 +2,14 @@
   <div class="mainRecentTransactionPage">
     <div class="topRecentTransaction">
       <h2 class="sectionTitle">Recent Transaction</h2>
-      <NuxtLink class="viewAllBtn" @click="goCategory">View All</NuxtLink>
+      <NuxtLink class="viewAllBtn" to="/categoryCarRent">View All</NuxtLink>
     </div>
 
     <div class="autoCardsRecentTransaction">
       <div v-for="car in recentCars" :key="car.id" class="transactionCard">
         <div class="carInfoSide">
           <div class="carImageWrapper">
-            <img :src="car.image" :alt="car.name" class="carThumb" />
+            <img :src="car.image" alt="" class="carThumb" loading="lazy" />
           </div>
           <div class="carDetails">
             <h3 class="carName">{{ car.name }}</h3>
@@ -28,20 +28,10 @@
 </template>
 
 <script lang="ts" setup>
-import { products } from "~~/data/products.ts";
-import { computed } from "vue";
+import { products } from "~~/data/products";
 
-const recentCars = computed(() => products.slice(0, 4));
-const router = useRouter();
-const props = defineProps<{
-  carousel?: boolean;
-  maxVisible?: number;
-  product?: Product;
-}>();
-
-const goCategory = (id: number) => {
-  router.push(`/categoryCarRent`);
-};
+// Демо-данные: «последние транзакции» — первые четыре машины каталога.
+const recentCars = products.slice(0, 4);
 </script>
 
 <style scoped>

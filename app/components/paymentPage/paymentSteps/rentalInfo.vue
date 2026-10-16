@@ -22,13 +22,14 @@
                   v-model="rentalStore.pickup.location"
                   class="custom-select"
                   ref="pickupLocationSelect"
+                  aria-label="Pick-up location"
                 >
                   <option value="" disabled selected>Select your city</option>
                   <option v-for="city in cities" :key="city" :value="city">
                     {{ city }}
                   </option>
                 </select>
-                <button @click="pickupLocationSelect.focus()">
+                <button type="button" aria-label="Open field" @click="pickupLocationSelect?.focus()">
                   <ArrowDown />
                 </button>
               </div>
@@ -38,12 +39,13 @@
               <div class="timeRentalInput">
                 <input
                   ref="pickupTimeInput"
+                  aria-label="Pick-up time"
                   v-model="rentalStore.pickup.time"
                   type="text"
                   placeholder="Select your time"
                   class="custom-select"
                 />
-                <button @click="pickupTimeInput.focus()"><ArrowDown /></button>
+                <button type="button" aria-label="Open field" @click="pickupTimeInput?.focus()"><ArrowDown /></button>
               </div>
             </div>
           </div>
@@ -53,12 +55,13 @@
               <div class="dateRentalInput">
                 <input
                   ref="pickupDateInput"
+                  aria-label="Pick-up date"
                   v-model="rentalStore.pickup.date"
                   type="text"
                   placeholder="Select your date"
                   class="custom-select"
                 />
-                <button @click="pickupDateInput.focus()"><ArrowDown /></button>
+                <button type="button" aria-label="Open field" @click="pickupDateInput?.focus()"><ArrowDown /></button>
               </div>
             </div>
           </div>
@@ -80,13 +83,14 @@
                   v-model="rentalStore.dropoff.location"
                   class="custom-select"
                   ref="dropoffLocationSelect"
+                  aria-label="Drop-off location"
                 >
                   <option value="" disabled selected>Select your city</option>
                   <option v-for="city in cities" :key="city" :value="city">
                     {{ city }}
                   </option>
                 </select>
-                <button @click="dropoffLocationSelect.focus()">
+                <button type="button" aria-label="Open field" @click="dropoffLocationSelect?.focus()">
                   <ArrowDown />
                 </button>
               </div>
@@ -96,12 +100,13 @@
               <div class="timeRentalInput">
                 <input
                   ref="dropoffTimeInput"
+                  aria-label="Drop-off time"
                   v-model="rentalStore.dropoff.time"
                   type="text"
                   placeholder="Select your time"
                   class="custom-select"
                 />
-                <button @click="dropoffTimeInput.focus()"><ArrowDown /></button>
+                <button type="button" aria-label="Open field" @click="dropoffTimeInput?.focus()"><ArrowDown /></button>
               </div>
             </div>
           </div>
@@ -111,12 +116,13 @@
               <div class="dateRentalInput">
                 <input
                   ref="dropoffDateInput"
+                  aria-label="Drop-off date"
                   v-model="rentalStore.dropoff.date"
                   type="text"
                   placeholder="Select your date"
                   class="custom-select"
                 />
-                <button @click="dropoffDateInput.focus()"><ArrowDown /></button>
+                <button type="button" aria-label="Open field" @click="dropoffDateInput?.focus()"><ArrowDown /></button>
               </div>
             </div>
           </div>
@@ -127,10 +133,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import ArrowDown from "../../icons/arrow-down.vue";
 import { useRentalStore } from "@/stores/rental";
 import flatpickr from "flatpickr";
+import type { Instance } from "flatpickr/dist/types/instance";
+import { cities } from "~~/data/cities";
 import "flatpickr/dist/flatpickr.css";
 
 const rentalStore = useRentalStore();
@@ -141,24 +149,10 @@ const dropoffTimeInput = ref<HTMLInputElement | null>(null);
 const pickupLocationSelect = ref<HTMLSelectElement | null>(null);
 const dropoffLocationSelect = ref<HTMLSelectElement | null>(null);
 
-const cities = [
-  "Moscow",
-  "London",
-  "New York",
-  "Tokyo",
-  "Paris",
-  "Berlin",
-  "Dubai",
-  "Singapore",
-  "Los Angeles",
-  "Barcelona",
-  "Rome",
-  "Prague",
-  "Amsterdam",
-  "Seoul",
-  "Madrid",
-  "Istanbul",
-];
+
+const pickers: Instance[] = [];
+
+onBeforeUnmount(() => pickers.forEach((fp) => fp.destroy()));
 
 onMounted(() => {
   const dateCfg = { dateFormat: "d M Y", disableMobile: true };
@@ -171,43 +165,43 @@ onMounted(() => {
   };
 
   if (pickupDateInput.value) {
-    flatpickr(pickupDateInput.value, {
+    pickers.push(flatpickr(pickupDateInput.value, {
       ...dateCfg,
       defaultDate: rentalStore.pickup.date,
       onChange: (selectedDates, dateStr) => {
         rentalStore.pickup.date = dateStr;
       },
-    });
+    }));
   }
 
   if (dropoffDateInput.value) {
-    flatpickr(dropoffDateInput.value, {
+    pickers.push(flatpickr(dropoffDateInput.value, {
       ...dateCfg,
       defaultDate: rentalStore.dropoff.date,
       onChange: (selectedDates, dateStr) => {
         rentalStore.dropoff.date = dateStr;
       },
-    });
+    }));
   }
 
   if (pickupTimeInput.value) {
-    flatpickr(pickupTimeInput.value, {
+    pickers.push(flatpickr(pickupTimeInput.value, {
       ...timeCfg,
       defaultDate: rentalStore.pickup.time,
       onChange: (selectedDates, dateStr) => {
         rentalStore.pickup.time = dateStr;
       },
-    });
+    }));
   }
 
   if (dropoffTimeInput.value) {
-    flatpickr(dropoffTimeInput.value, {
+    pickers.push(flatpickr(dropoffTimeInput.value, {
       ...timeCfg,
       defaultDate: rentalStore.dropoff.time,
       onChange: (selectedDates, dateStr) => {
         rentalStore.dropoff.time = dateStr;
       },
-    });
+    }));
   }
 });
 </script>
@@ -364,7 +358,6 @@ onMounted(() => {
     padding: 1rem 0 1rem 2rem;
     font-weight: 500;
     font-size: 0.875rem;
-    outline: none;
     cursor: pointer;
     font-family: inherit;
     -webkit-appearance: none;

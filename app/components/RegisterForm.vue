@@ -1,12 +1,13 @@
 <template>
   <div class="login-form-container">
-    <button class="close-btn" @click="router.push('/')" title="На главную">
+    <NuxtLink to="/" class="close-btn" aria-label="На главную" title="На главную">
       <svg
         width="24"
         height="24"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
       >
         <path
           d="M18 6L6 18M6 6L18 18"
@@ -16,37 +17,44 @@
           stroke-linejoin="round"
         />
       </svg>
-    </button>
+    </NuxtLink>
 
-    <h2 class="form-title">Регистрация</h2>
+    <h1 class="form-title">Регистрация</h1>
     <p class="form-subtitle">Создайте аккаунт в MORENT</p>
 
     <form @submit.prevent="handleRegister" class="form-body">
       <div class="input-group">
-        <label>Email</label>
+        <label for="reg-email">Email</label>
         <div class="password-input-wrapper">
           <input
+            id="reg-email"
             type="email"
             v-model="email"
             placeholder="Введите ваш email"
             class="email-input"
+            autocomplete="email"
+            required
           />
         </div>
       </div>
 
       <div class="input-group">
-        <label>Пароль</label>
+        <label for="reg-password">Пароль</label>
         <div class="password-input-wrapper">
           <input
+            id="reg-password"
             :type="showPassword ? 'text' : 'password'"
             v-model="password"
             placeholder="Придумайте пароль"
+            autocomplete="new-password"
+            required
           />
           <button
             type="button"
             class="eye-btn"
             @click="showPassword = !showPassword"
-            :title="showPassword ? 'Скрыть пароль' : 'Показать пароль'"
+            :aria-label="showPassword ? 'Скрыть пароль' : 'Показать пароль'"
+            :aria-pressed="showPassword"
           >
             <svg
               v-if="!showPassword"
@@ -59,6 +67,7 @@
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
+              aria-hidden="true"
             >
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
@@ -74,6 +83,7 @@
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
+              aria-hidden="true"
             >
               <path
                 d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
@@ -85,22 +95,32 @@
       </div>
 
       <div class="input-group">
-        <label>Повторите пароль</label>
+        <label for="reg-confirm">Повторите пароль</label>
         <div class="password-input-wrapper">
           <input
+            id="reg-confirm"
             :type="showPassword ? 'text' : 'password'"
             v-model="confirmPassword"
             placeholder="Повторите пароль"
+            autocomplete="new-password"
             required
           />
         </div>
       </div>
 
-      <button type="submit" class="submit-btn">Зарегистрироваться</button>
+      <button type="submit" class="submit-btn" :disabled="isSubmitting">
+        {{ isSubmitting ? "Регистрация…" : "Зарегистрироваться" }}
+      </button>
 
       <p class="switch-text">
         Уже есть аккаунт?
-        <span class="switch-link" @click="$emit('switch-to-login')">Войти</span>
+        <button
+          type="button"
+          class="switch-link"
+          @click="$emit('switch-to-login')"
+        >
+          Войти
+        </button>
       </p>
     </form>
   </div>
@@ -108,29 +128,22 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { usePaymentStore } from "@/stores/toast";
+import { useToastStore } from "@/stores/toast";
 
-interface User {
-  email: string;
-  password: string;
-  createdAt: number;
-}
-
-const router = useRouter();
-const toastStore = usePaymentStore();
+const toastStore = useToastStore();
 
 const email = ref<string>("");
 const password = ref<string>("");
 const confirmPassword = ref<string>("");
-
 const showPassword = ref<boolean>(false);
+const isSubmitting = ref<boolean>(false);
 
 const emit = defineEmits<{
   (e: "switch-to-login"): void;
 }>();
 
-const handleRegister = (): void => {
-  const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const handleRegister = async (): Promise<void> => {
+  if (isSubmitting.value) return;
 
   const normalizedEmail = email.value.trim().toLowerCase();
 
@@ -139,7 +152,7 @@ const handleRegister = (): void => {
     return;
   }
 
-  if (!emailReg.test(normalizedEmail)) {
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
     toastStore.addToast("Пожалуйста, введите корректный Email", "error");
     return;
   }
@@ -149,7 +162,7 @@ const handleRegister = (): void => {
     return;
   }
 
-  if (password.value.length < 4) {
+  if (password.value.length < MIN_PASSWORD_LENGTH) {
     toastStore.addToast("Пароль должен быть не менее 4 символов", "warning");
     return;
   }
@@ -159,15 +172,9 @@ const handleRegister = (): void => {
     return;
   }
 
-  const users: User[] = JSON.parse(
-    localStorage.getItem("morent_users") || "[]",
-  );
+  const users = readUsers();
 
-  const userExists = users.some(
-    (u: User) => u.email.toLowerCase() === normalizedEmail,
-  );
-
-  if (userExists) {
+  if (users.some((u) => u.email === normalizedEmail)) {
     toastStore.addToast(
       "Пользователь с таким Email уже зарегистрирован",
       "error",
@@ -175,15 +182,14 @@ const handleRegister = (): void => {
     return;
   }
 
+  isSubmitting.value = true;
   try {
-    const newUser: User = {
+    users.push({
       email: normalizedEmail,
-      password: password.value,
+      passwordHash: await hashPassword(normalizedEmail, password.value),
       createdAt: Date.now(),
-    };
-
-    users.push(newUser);
-    localStorage.setItem("morent_users", JSON.stringify(users));
+    });
+    writeUsers(users);
 
     toastStore.addToast(
       "Регистрация прошла успешно 🎉 Теперь войдите в аккаунт",
@@ -194,6 +200,8 @@ const handleRegister = (): void => {
   } catch (e) {
     console.error(e);
     toastStore.addToast("Ошибка при сохранении пользователя", "error");
+  } finally {
+    isSubmitting.value = false;
   }
 };
 </script>
@@ -360,5 +368,12 @@ const handleRegister = (): void => {
       }
     }
   }
+}
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.close-btn {
+  text-decoration: none;
 }
 </style>

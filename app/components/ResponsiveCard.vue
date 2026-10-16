@@ -3,11 +3,10 @@ import Heart_linear from "~/components/icons/cardsIcons/heart_linear.vue";
 import Gas from "~/components/icons/cardsIcons/gas.vue";
 import Wheel from "~/components/icons/cardsIcons/wheel.vue";
 import Profile2user from "~/components/icons/cardsIcons/profile2user.vue";
-import { useRouter } from "vue-router";
-import type { Product } from "~~/data/products";
+import Heart_bold from "~/components/icons/cardsIcons/heart_bold.vue";
 import ButtonRental from "./Button-rental.vue";
 import { useFavorites } from "~/stores/favorites";
-import Heart_bold from "~/components/icons/cardsIcons/heart_bold.vue";
+import type { Product } from "~~/data/products";
 
 const props = defineProps<{
   carousel?: boolean;
@@ -17,46 +16,44 @@ const props = defineProps<{
 
 // избранное
 const favoriteStore = useFavorites();
-const toggleFavorite = () => {
-  favoriteStore.toggleFavorite(props.product.id);
-};
+const isAdded = computed(() => favoriteStore.isFavorite(props.product.id));
+const toggleFavorite = () => favoriteStore.toggleFavorite(props.product.id);
 
-const isAdded = computed(() => {
-  return favoriteStore.isFavorite(props.product.id);
-});
+const detailLink = computed(() => `/detailCarRent/${props.product.id}`);
+const paymentLink = computed(() => `/paymentCarRent/${props.product.id}`);
 
-// переходы
-const router = useRouter();
-const goToDetail = (id: number) => {
-  router.push(`/detailCarRent/${id}`);
-};
-const goCategory = (id: number) => {
-  router.push(`/categoryCarRent`);
-};
-const goSummary = (id: number) => {
-  router.push(`/paymentCarRent/${id}`);
-};
-
-// если картинку не грузит
+// если картинку не грузит — подставляем запасную один раз
 const defaultCarImage = "/y2AAAgCxquA-960.jpg";
-const handleImageError = (event: Error) => {
-  const target = event.target as HTMLElement;
-  target.src = defaultCarImage;
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  if (!target.src.endsWith(defaultCarImage)) {
+    target.src = defaultCarImage;
+  }
 };
 </script>
 
 <template>
-  <div
+  <article
     class="responsiveCard"
     :class="{ carousel: props.carousel }"
     v-if="props.product"
   >
     <div class="cardHeader">
-      <div class="tittle" @click="goToDetail(props.product.id)">
+      <NuxtLink class="tittle" :to="detailLink">
         <h2>{{ props.product.name }}</h2>
-        <h5>{{ props.product.category }}</h5>
-      </div>
-      <button class="favorite" @click="toggleFavorite">
+        <p class="categoryLabel">{{ props.product.category }}</p>
+      </NuxtLink>
+      <button
+        type="button"
+        class="favorite"
+        :aria-pressed="isAdded"
+        :aria-label="
+          isAdded
+            ? `Remove ${props.product.name} from favorites`
+            : `Add ${props.product.name} to favorites`
+        "
+        @click="toggleFavorite"
+      >
         <component
           :is="isAdded ? Heart_bold : Heart_linear"
           class="heart-iconCar"
@@ -66,16 +63,18 @@ const handleImageError = (event: Error) => {
     </div>
 
     <div class="cardData">
-      <div class="image" @click="goToDetail(props.product.id)">
+      <NuxtLink class="image" :to="detailLink" tabindex="-1" aria-hidden="true">
         <img
           alt=""
           class="carImage"
+          loading="lazy"
+          decoding="async"
           @error="handleImageError"
           :src="props.product.image || defaultCarImage"
         />
-      </div>
+      </NuxtLink>
 
-      <div class="specifications" @click="goCategory(props.product.id)">
+      <div class="specifications">
         <div class="item">
           <gas class="itemIcon" />
           {{ props.product.gasoline }}L
@@ -92,16 +91,14 @@ const handleImageError = (event: Error) => {
     </div>
 
     <div class="footerCard">
-      <div class="price" @click="goSummary(props.product.id)">
+      <div class="price">
         ${{ props.product.price.toFixed(2) }}/ <span>day</span>
       </div>
-      <ButtonRental
-        label="Rental Now"
-        :product="product"
-        @click="router.push(`/paymentCarRent/${product.id}`)"
-      ></ButtonRental>
+      <NuxtLink :to="paymentLink" custom v-slot="{ navigate }">
+        <ButtonRental label="Rental Now" @click="navigate" />
+      </NuxtLink>
     </div>
-  </div>
+  </article>
 </template>
 
 <style scoped>
@@ -136,7 +133,7 @@ const handleImageError = (event: Error) => {
       padding-left: 1rem;
 
       h2,
-      h5 {
+      .categoryLabel {
         margin: 0;
         text-wrap: nowrap;
       }
@@ -146,7 +143,7 @@ const handleImageError = (event: Error) => {
         font-weight: 600;
         font-size: 1rem;
       }
-      h5 {
+      .categoryLabel {
         color: var(--secondary-300);
         font-size: 0.75rem;
         font-weight: 500;
@@ -161,15 +158,10 @@ const handleImageError = (event: Error) => {
       align-items: center;
       justify-content: center;
       -webkit-tap-highlight-color: transparent;
-      outline: none;
       transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       :hover {
         transform: scale(1.2);
         transition: all 0.5s;
-      }
-
-      &:focus {
-        outline: none;
       }
 
       &.active {
@@ -350,5 +342,11 @@ const handleImageError = (event: Error) => {
       }
     }
   }
+}
+.tittle,
+.image {
+  display: block;
+  color: inherit;
+  text-decoration: none;
 }
 </style>

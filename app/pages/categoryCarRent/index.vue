@@ -2,7 +2,7 @@
   <div class="mainCategoryPage">
     <Transition name="slide-side">
       <div v-if="isSidebarOpen" class="mobileSidebar">
-        <categories-menu @updateFilters="handleFilters" />
+        <categories-menu />
       </div>
     </Transition>
     <div
@@ -11,7 +11,7 @@
       @click="closeSidebar"
     ></div>
     <div class="categoryMenu">
-      <categories-menu @updateFilters="handleFilters" />
+      <categories-menu />
     </div>
     <div class="cardMenu">
       <div class="switch_buttons">
@@ -45,6 +45,7 @@
           @update:location="(val) => (rentalStore.dropoff.location = val)"
         />
       </div>
+      <h1 class="visually-hidden">Car catalog</h1>
       <div class="cards">
         <template v-if="filteredProducts.length > 0">
           <ResponsiveCard
@@ -53,15 +54,11 @@
             :product="product"
           />
         </template>
-        <div
-          v-else
-          style="
-            grid-column: 1/-1;
-            text-align: center;
-            color: var(--secondary-300);
-          "
-        >
-          No cars found matching your filters.
+        <div v-else class="emptyState">
+          <p>No cars found matching your filters.</p>
+          <button type="button" class="resetFilters" @click="resetFilters">
+            Reset filters
+          </button>
         </div>
       </div>
       <div class="buttonsMainPage">
@@ -79,176 +76,58 @@
 <script lang="ts" setup>
 import PickUp from "~/components/Pick-up.vue";
 import ResponsiveCard from "~/components/ResponsiveCard.vue";
-import { ref, computed, onMounted, reactive, inject, watch } from "vue";
-import { products } from "~~/data/products.ts";
+import ButtonRental from "~/components/Button-rental.vue";
 import CategoriesMenu from "~/components/categoriesMenu.vue";
+import { ref, computed, onMounted, nextTick, watch } from "vue";
 
-const isWideScreen = ref<boolean>(false);
-const screenWidth = ref<number>(0);
-
-onMounted(() => {
-  checkScreenWidth();
-  window.addEventListener("resize", checkScreenWidth);
-});
-
-const checkScreenWidth = (): void => {
-  screenWidth.value = window.innerWidth;
-  isWideScreen.value = screenWidth.value >= 760;
-};
-
-// количество карточек
-const wideScreenQuantityCards = computed<number>(() => {
-  if (screenWidth.value >= 1440) return 9;
-  return 12;
-});
-
-//переключение виджетов
-const isSwitched = ref<boolean>(false);
-
-// передача карточек из фильтра
-interface Filters {
-  types: string[];
-  capacities: number[];
-  price: number;
-}
-
-const currentFilters = reactive<Filters>({
-  types: [],
-  capacities: [],
-  price: 200,
-});
-
-const handleFilters = (newFilter: Filters): void => {
-  currentFilters.types = newFilter.types;
-  currentFilters.capacities = newFilter.capacities;
-  currentFilters.price = newFilter.price;
-};
-
-const filteredProducts = computed(() => {
-  return products.filter((car) => {
-    const matchPrice = car.price <= currentFilters.price;
-
-    const matchType =
-      currentFilters.types.length === 0 ||
-      currentFilters.types.includes(car.category);
-
-    const matchCapacity =
-      currentFilters.capacities.length === 0 ||
-      currentFilters.capacities.includes(car.seats);
-
-    return matchPrice && matchType && matchCapacity;
-  });
-});
-
-// отдельный хэдер для мобилки
 definePageMeta({
   isSpecialHeader: true,
 });
 
-// сайдбар
-interface SidebarContext {
-  isSidebarOpen: {
-    value: boolean;
-  };
-}
-
-const sidebarContext = inject<SidebarContext | null>("sidebarContext", null);
-
-const isSidebarOpen = computed<boolean>(
-  () => sidebarContext?.isSidebarOpen.value ?? false,
-);
-
-const closeSidebar = (): void => {
-  if (sidebarContext) {
-    sidebarContext.isSidebarOpen.value = false;
-  }
-};
-
-watch(isSidebarOpen, (value: boolean) => {
-  if (value && !isSidebarOpen.value) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-  }
+useSeoMeta({
+  title: "Car catalog — filter by type, capacity and price",
+  description:
+    "Browse all MORENT cars: filter by type, number of seats and daily price.",
 });
 
-// виджеты - данные
+const { screenWidth } = useScreenWidth();
+const { filteredProducts, resetFilters } = useCarFilters();
+const { isSidebarOpen, closeSidebar } = useSidebarScrollLock();
 const rentalStore = useRentalStore();
+const {
+  pickUpRef,
+  dropOffRef,
+  isSwitched,
+  calculateDistance,
+  switchToggle,
+  pickUpStyle,
+  dropOffStyle,
+} = useSwapAnimation();
 
-// вычисление анимации
-const switchToggle = (): void => {
-  calculateDistance();
-  isSwitched.value = !isSwitched.value;
-};
+onMounted(() => nextTick(calculateDistance));
+watch(screenWidth, () => nextTick(calculateDistance));
 
-type ComponentWithEl = {
-  $el?: HTMLElement;
-};
-
-const pickUpRef = ref<ComponentWithEl | HTMLElement | null>(null);
-const dropOffRef = ref<ComponentWithEl | HTMLElement | null>(null);
-
-const dist = reactive<{
-  x: number;
-  y: number;
-}>({
-  x: 0,
-  y: 0,
-});
-
-const calculateDistance = (): void => {
-  const el1 =
-    pickUpRef.value && "$el" in pickUpRef.value
-      ? pickUpRef.value.$el
-      : pickUpRef.value;
-
-  const el2 =
-    dropOffRef.value && "$el" in dropOffRef.value
-      ? dropOffRef.value.$el
-      : dropOffRef.value;
-
-  if (el1 && el2) {
-    dist.x = el2.offsetLeft - el1.offsetLeft;
-    dist.y = el2.offsetTop - el1.offsetTop;
-  }
-};
-
-const pickUpStyle = computed<Record<string, string>>(() =>
-  isSwitched.value
-    ? { transform: `translate(${dist.x}px, ${dist.y}px)` }
-    : { transform: "none" },
-);
-
-const dropOffStyle = computed<Record<string, string>>(() =>
-  isSwitched.value
-    ? { transform: `translate(${-dist.x}px, ${-dist.y}px)` }
-    : { transform: "none" },
-);
-
-// Кнопка больше машин
-
+// Кнопка «показать ещё»
 const baseCount = computed<number>(() => (screenWidth.value >= 1440 ? 9 : 12));
-
 const extraCarsCount = ref<number>(0);
 
 const visibleLimit = computed<number>(
   () => baseCount.value + extraCarsCount.value,
 );
 
-const isAllShown = computed<boolean>(() => {
-  return visibleLimit.value >= filteredProducts.value.length;
-});
+// при смене фильтров начинаем с первой «страницы»
+watch(filteredProducts, () => (extraCarsCount.value = 0));
 
-const buttonLabel = computed<string>(() => {
-  return isAllShown.value ? "Show Start" : "Show More Car";
-});
+const isAllShown = computed<boolean>(
+  () => visibleLimit.value >= filteredProducts.value.length,
+);
+
+const buttonLabel = computed<string>(() =>
+  isAllShown.value ? "Show Start" : "Show More Car",
+);
 
 const showMoreCars = (): void => {
-  if (isAllShown.value) {
-    extraCarsCount.value = 0;
-  } else {
-    extraCarsCount.value += 9;
-  }
+  extraCarsCount.value = isAllShown.value ? 0 : extraCarsCount.value + 9;
 };
 </script>
 
@@ -363,8 +242,9 @@ const showMoreCars = (): void => {
     left: 0;
     width: 280px;
     height: 100vh;
+    height: 100dvh;
     background-color: var(--primary-0);
-    z-index: 100;
+    z-index: var(--z-drawer);
     box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
     padding: 1rem;
     overflow-y: auto;
@@ -376,8 +256,9 @@ const showMoreCars = (): void => {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.4);
-    z-index: 99;
+    z-index: var(--z-overlay);
   }
 }
 
@@ -389,5 +270,23 @@ const showMoreCars = (): void => {
 .slide-side-enter-from,
 .slide-side-leave-to {
   transform: translateX(-100%);
+}
+.emptyState {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--secondary-300);
+}
+.resetFilters {
+  color: var(--primary-500);
+  text-decoration: underline;
+  font-weight: 600;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 </style>

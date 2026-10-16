@@ -20,11 +20,11 @@
       </div>
       <div class="dashBoardMenuItems">
         <Message></Message>
-        <h6>Reimburse</h6>
+        <h6>Messages</h6>
       </div>
       <div class="dashBoardMenuItems">
         <Calendar></Calendar>
-        <h6>Calender</h6>
+        <h6>Calendar</h6>
       </div>
     </div>
     <div class="dashboardPreferences">
@@ -42,7 +42,10 @@
         <h6>Dark Mode</h6>
         <div class="theme-toggle-container">
           <button
+            type="button"
             class="theme"
+            aria-label="Dark mode"
+            :aria-pressed="isDarkMode"
             @click="toggleTheme(isDarkMode ? 'light' : 'dark')"
           >
             <div class="slider-bg" :class="{ 'is-dark': isDarkMode }"></div>
@@ -53,7 +56,14 @@
         </div>
       </div>
     </div>
-    <div class="logOutAccount" @click="handleLogout">
+    <div
+      class="logOutAccount"
+      role="button"
+      tabindex="0"
+      @click="handleLogout"
+      @keydown.enter="handleLogout"
+      @keydown.space.prevent="handleLogout"
+    >
       <LogOut></LogOut>
       <h6>Log Out</h6>
     </div>
@@ -81,20 +91,28 @@ onMounted(() => {
   isDarkMode.value = document.documentElement.classList.contains("dark");
 });
 
+const saveTheme = (mode: "light" | "dark"): void => {
+  try {
+    localStorage.setItem("theme", mode);
+  } catch {
+    /* localStorage недоступен (приватный режим) — тема просто не запомнится */
+  }
+};
+
 const toggleTheme = (mode: "light" | "dark") => {
   if (mode === "dark") {
     document.documentElement.classList.add("dark");
-    localStorage.setItem("theme", "dark");
+    saveTheme("dark");
     isDarkMode.value = true;
   } else {
     document.documentElement.classList.remove("dark");
-    localStorage.setItem("theme", "light");
+    saveTheme("light");
     isDarkMode.value = false;
   }
 };
 // Выход
 const router = useRouter();
-const authCookie = useCookie("auth-logged-in");
+const authCookie = useCookie<string | null>("auth-logged-in");
 const handleLogout = () => {
   authCookie.value = null;
   router.push("/");

@@ -2,7 +2,7 @@
   <div class="mainDetailPage" v-if="product">
     <Transition name="slide-side">
       <div v-if="isSidebarOpen" class="mobileSidebar">
-        <categories-menu @updateFilters="handleFilters" />
+        <categories-menu />
       </div>
     </Transition>
     <div
@@ -11,182 +11,106 @@
       @click="closeSidebar"
     ></div>
     <div class="categoryMenu">
-      <CategoriesMenu @updateFilters="handleFilters"></CategoriesMenu>
+      <CategoriesMenu />
     </div>
     <div class="secondHalfPage">
       <div class="carDetailCard">
         <div class="imageDetails">
-          <ImagesBlockDetails :product="product"></ImagesBlockDetails>
+          <ImagesBlockDetails :product="product" />
         </div>
-        <DetailCard v-if="product" :product="product"></DetailCard>
+        <DetailCard :product="product" />
       </div>
-      <div class="reviews"><Reviews /></div>
+      <div class="reviews"><Reviews :car-id="product.id" /></div>
       <div class="caregoryDetailCards">
-        <p>Recent Car</p>
-        <a href="#">View All</a>
+        <h2>Recent Car</h2>
+        <NuxtLink to="/categoryCarRent">View All</NuxtLink>
       </div>
       <div class="recentCar">
-        <template v-if="filteredProducts.length > 0">
+        <template v-if="recentProducts.length > 0">
           <ResponsiveCard
             v-for="item in recentProducts"
             :key="item.id"
             :product="item"
           />
         </template>
-        <div
-          v-else
-          style="
-            grid-column: 1/-1;
-            text-align: center;
-            color: var(--secondary-300);
-          "
-        >
-          No cars found matching your filters.
+        <div v-else class="emptyState">
+          <p>No cars found matching your filters.</p>
         </div>
       </div>
       <div class="caregoryDetailCards">
-        <p>Recomendation Car</p>
-        <a href="#">View All</a>
+        <h2>Recommendation Car</h2>
+        <NuxtLink to="/categoryCarRent">View All</NuxtLink>
       </div>
       <div class="recommendationCar">
-        <template v-if="filteredProducts.length > 0">
+        <template v-if="recommendationProducts.length > 0">
           <ResponsiveCard
             v-for="item in recommendationProducts"
             :key="item.id"
             :product="item"
           />
         </template>
-        <div
-          v-else
-          style="
-            grid-column: 1/-1;
-            text-align: center;
-            color: var(--secondary-300);
-          "
-        >
-          No cars found matching your filters.
+        <div v-else class="emptyState">
+          <p>No cars found matching your filters.</p>
         </div>
       </div>
     </div>
   </div>
-  <div v-else>Car not found</div>
 </template>
 
 <script lang="ts" setup>
 import DetailCard from "~/components/detailPage/detailCard.vue";
 import ResponsiveCard from "~/components/ResponsiveCard.vue";
 import Reviews from "~/components/detailPage/reviews.vue";
-import { useRoute } from "vue-router";
-import { products } from "~~/data/products.ts";
 import ImagesBlockDetails from "~/components/detailPage/imagesBlockDetails.vue";
-import { ref, computed, onMounted, reactive, inject, watch } from "vue";
-import type { Product } from "~~/data/products.ts";
 import CategoriesMenu from "~/components/categoriesMenu.vue";
+import { products } from "~~/data/products";
+import type { Product } from "~~/data/products";
+import { computed } from "vue";
 
-// получение нужной карточки
-const route = useRoute();
-const productId: number = Number(route.params.id);
-
-const product = computed<Product | undefined>(() =>
-  products.find((p) => p.id === productId),
-);
-
-// фильтры
-// передача карточек из фильтра
-interface Filters {
-  types: string[];
-  capacities: number[];
-  price: number;
-}
-
-const currentFilters = reactive<Filters>({
-  types: [],
-  capacities: [],
-  price: 200,
-});
-
-const handleFilters = (newFilter: Filters): void => {
-  currentFilters.types = newFilter.types;
-  currentFilters.capacities = newFilter.capacities;
-  currentFilters.price = newFilter.price;
-};
-
-const filteredProducts = computed<Product[]>(() => {
-  return products.filter((car) => {
-    const matchPrice = car.price <= currentFilters.price;
-
-    const matchType =
-      currentFilters.types.length === 0 ||
-      currentFilters.types.includes(car.category);
-
-    const matchCapacity =
-      currentFilters.capacities.length === 0 ||
-      currentFilters.capacities.includes(car.seats);
-
-    return matchPrice && matchType && matchCapacity;
-  });
-});
-
-// показ карточек
-const recentProducts = computed<Product[]>(() =>
-  filteredProducts.value
-    .filter((p) => p.id !== productId)
-    .slice(0, wideScreenQuantityCards.value),
-);
-
-const recommendationProducts = computed<Product[]>(() =>
-  filteredProducts.value.slice(0, wideScreenQuantityCards.value),
-);
-
-const isWideScreen = ref<boolean>(false);
-const screenWidth = ref<number>(0);
-
-onMounted(() => {
-  checkScreenWidth();
-  window.addEventListener("resize", checkScreenWidth);
-});
-
-const checkScreenWidth = (): void => {
-  screenWidth.value = window.innerWidth;
-  isWideScreen.value = screenWidth.value >= 760;
-};
-
-const wideScreenQuantityCards = computed<number>(() => {
-  if (screenWidth.value >= 1440) return 3;
-  return 12;
-});
-
-// // отдельный хэдер для мобилки
 definePageMeta({
   isSpecialHeader: true,
 });
 
-// сайдбар
-interface SidebarContext {
-  isSidebarOpen: {
-    value: boolean;
-  };
-}
+const route = useRoute();
+const productId = computed<number>(() => Number(route.params.id));
 
-const sidebarContext = inject<SidebarContext | null>("sidebarContext", null);
-
-const isSidebarOpen = computed<boolean>(
-  () => sidebarContext?.isSidebarOpen.value ?? false,
+const product = computed<Product | undefined>(() =>
+  products.find((p) => p.id === productId.value),
 );
 
-const closeSidebar = (): void => {
-  if (sidebarContext) {
-    sidebarContext.isSidebarOpen.value = false;
-  }
-};
+if (!product.value) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: "Car not found",
+    fatal: true,
+  });
+}
 
-watch(isSidebarOpen, (isOpen: boolean) => {
-  if (isOpen) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-  }
+useSeoMeta({
+  title: () => `${product.value?.name ?? "Car"} — rent from $${product.value?.price.toFixed(2)}/day`,
+  description: () =>
+    `Rent ${product.value?.name} (${product.value?.category}, ${product.value?.seats} seats) at $${product.value?.price.toFixed(2)} per day.`,
+  ogImage: () => product.value?.image,
 });
+
+const { screenWidth } = useScreenWidth();
+const { filteredProducts } = useCarFilters();
+const { isSidebarOpen, closeSidebar } = useSidebarScrollLock();
+
+const cardsLimit = computed<number>(() => (screenWidth.value >= 1440 ? 3 : 12));
+
+const otherProducts = computed<Product[]>(() =>
+  filteredProducts.value.filter((p) => p.id !== productId.value),
+);
+
+const recentProducts = computed<Product[]>(() =>
+  otherProducts.value.slice(0, cardsLimit.value),
+);
+
+// другая выборка, чтобы блоки не дублировали друг друга
+const recommendationProducts = computed<Product[]>(() =>
+  otherProducts.value.slice(cardsLimit.value, cardsLimit.value * 2),
+);
 </script>
 
 <style scoped>
@@ -234,7 +158,7 @@ watch(isSidebarOpen, (isOpen: boolean) => {
         padding-left: 1.5rem;
         padding-bottom: 1.25rem;
       }
-      p {
+      h2 {
         margin: 0;
         color: var(--secondary-300);
         font-size: 1rem;
@@ -295,8 +219,9 @@ watch(isSidebarOpen, (isOpen: boolean) => {
     left: 0;
     width: 280px;
     height: 100vh;
+    height: 100dvh;
     background-color: var(--primary-0);
-    z-index: 100;
+    z-index: var(--z-drawer);
     box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
     padding: 1rem;
     overflow-y: auto;
@@ -308,8 +233,9 @@ watch(isSidebarOpen, (isOpen: boolean) => {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.4);
-    z-index: 99;
+    z-index: var(--z-overlay);
   }
 }
 .slide-side-enter-active,
@@ -320,5 +246,10 @@ watch(isSidebarOpen, (isOpen: boolean) => {
 .slide-side-enter-from,
 .slide-side-leave-to {
   transform: translateX(-100%);
+}
+.emptyState {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--secondary-300);
 }
 </style>

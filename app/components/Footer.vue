@@ -1,7 +1,7 @@
 <template>
   <footer class="footer">
     <div class="title">
-      <div class="name" @click="goMain">MORENT</div>
+      <NuxtLink to="/" class="name">MORENT</NuxtLink>
       <div class="subscription">
         Our vision is to provide convenience <br />
         and help increase your sales business.
@@ -13,7 +13,7 @@
         <p>How it works</p>
         <p>Featured</p>
         <p>Partnership</p>
-        <p>Bussiness Relation</p>
+        <p>Business Relation</p>
       </div>
       <div class="resources socials">
         <h3>Socials</h3>
@@ -40,7 +40,7 @@
       </div>
       <div class="footer_down2">
         <h5>
-          ©&nbsp;{{ new Date().getFullYear() }} MORENT. All rights reserved
+          ©&nbsp;{{ year }} MORENT. All rights reserved
         </h5>
       </div>
     </div>
@@ -48,12 +48,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useRouter } from "vue-router";
-const router = useRouter();
-
-const goMain = (id: number) => {
-  router.push(`/`);
-};
+const year = new Date().getFullYear();
 </script>
 
 <style>
@@ -325,5 +320,9 @@ const goMain = (id: number) => {
       }
     }
   }
+}
+.footer .name {
+  text-decoration: none;
+  display: inline-block;
 }
 </style>

@@ -14,7 +14,7 @@
             <div class="circleBluePaymentMethod"></div>
             <h4>Credit Card</h4>
           </div>
-          <img src="/paySystems/Visa.png" alt="" />
+          <img src="/paySystems/Visa.png" alt="Visa" />
         </div>
         <div class="mainPaymentMethod">
           <div class="firstPaymentMethodColumn">
@@ -24,7 +24,12 @@
                 <input
                   type="text"
                   placeholder="Card Number"
-                  v-model="store.payment.cardNumber"
+                  aria-label="Card number"
+                  inputmode="numeric"
+                  autocomplete="cc-number"
+                  maxlength="23"
+                  @input="formatCardNumber"
+                  :value="store.payment.cardNumber"
                 />
               </div>
             </div>
@@ -34,6 +39,8 @@
                 <input
                   type="text"
                   placeholder="Card Holder"
+                  aria-label="Card holder"
+                  autocomplete="cc-name"
                   v-model="store.payment.cardHolder"
                 />
               </div>
@@ -45,8 +52,13 @@
               <div class="exprationDatePaymentMethodInput">
                 <input
                   type="text"
-                  placeholder=" MM / YY"
-                  v-model="store.payment.expirationDate"
+                  placeholder="MM / YY"
+                  aria-label="Expiration date"
+                  inputmode="numeric"
+                  autocomplete="cc-exp"
+                  maxlength="7"
+                  @input="formatExpiration"
+                  :value="store.payment.expirationDate"
                 />
               </div>
             </div>
@@ -56,7 +68,12 @@
                 <input
                   type="text"
                   placeholder="CVC"
-                  v-model="store.payment.cvc"
+                  aria-label="CVC"
+                  inputmode="numeric"
+                  autocomplete="cc-csc"
+                  maxlength="4"
+                  @input="formatCvc"
+                  :value="store.payment.cvc"
                 />
               </div>
             </div>
@@ -64,8 +81,8 @@
         </div>
       </div>
     </div>
-    <div class="bottomPaymentMethod">
-      <div class="payPal-bottomPaymentMethod" @click="setMethod('paypal')">
+    <div class="bottomPaymentMethod" role="radiogroup" aria-label="Other payment methods">
+      <div class="payPal-bottomPaymentMethod" role="radio" tabindex="0" :aria-checked="store.payment.method === 'paypal'" @click="setMethod('paypal')" @keydown.enter.prevent="setMethod('paypal')" @keydown.space.prevent="setMethod('paypal')">
         <div class="namePaymentMethod">
           <div class="selection-wrapper">
             <TickSquare
@@ -78,7 +95,7 @@
         </div>
         <img src="/paySystems/PayPal.png" alt="" />
       </div>
-      <div class="bitCoin-bottomPaymentMethod" @click="setMethod('bitcoin')">
+      <div class="bitCoin-bottomPaymentMethod" role="radio" tabindex="0" :aria-checked="store.payment.method === 'bitcoin'" @click="setMethod('bitcoin')" @keydown.enter.prevent="setMethod('bitcoin')" @keydown.space.prevent="setMethod('bitcoin')">
         <div class="namePaymentMethod">
           <div class="selection-wrapper">
             <TickSquare
@@ -97,22 +114,42 @@
 
 <script lang="ts" setup>
 import TickSquare from "../../icons/tickSquare.vue";
-import { ref } from "vue";
+import { usePaymentStore } from "@/stores/payment";
 
-const selectedPaymentMethod = ref<string[]>([]);
-const toggleMethod = (method: string) => {
-  const index = selectedPaymentMethod.value.indexOf(method);
-  if (index === -1) {
-    selectedPaymentMethod.value.push(method);
-  } else {
-    selectedPaymentMethod.value.splice(index, 1);
-  }
+const store = usePaymentStore();
+
+type Method = "card" | "paypal" | "bitcoin";
+const setMethod = (method: Method) => {
+  store.payment.method = method;
 };
 
-import { usePaymentStore } from "@/stores/toast";
-const store = usePaymentStore();
-const setMethod = (method: string) => {
-  store.payment.method = method;
+// Ввод ограничиваем цифрами и форматируем: 4242 4242 4242 4242, MM / YY
+const digitsOnly = (value: string) => value.replace(/\D/g, "");
+
+const formatCardNumber = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const formatted = digitsOnly(input.value)
+    .slice(0, 19)
+    .replace(/(.{4})/g, "$1 ")
+    .trim();
+  input.value = formatted;
+  store.payment.cardNumber = formatted;
+};
+
+const formatExpiration = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const digits = digitsOnly(input.value).slice(0, 4);
+  const formatted =
+    digits.length > 2 ? `${digits.slice(0, 2)} / ${digits.slice(2)}` : digits;
+  input.value = formatted;
+  store.payment.expirationDate = formatted;
+};
+
+const formatCvc = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const digits = digitsOnly(input.value).slice(0, 4);
+  input.value = digits;
+  store.payment.cvc = digits;
 };
 </script>
 

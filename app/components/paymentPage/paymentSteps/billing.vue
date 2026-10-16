@@ -14,6 +14,8 @@
           <input
             type="text"
             placeholder="Your Name"
+            aria-label="Name"
+            autocomplete="name"
             :value="store.billing.name"
             @input="handleInput('name', $event, /[^a-zA-Zа-яА-Я\s]/g)"
           />
@@ -23,6 +25,8 @@
           <input
             type="text"
             placeholder="Address"
+            aria-label="Address"
+            autocomplete="street-address"
             :value="store.billing.address"
             @input="handleInput('address', $event, /[<>{}]/g)"
           />
@@ -31,13 +35,21 @@
       <div class="billingSecondColumn">
         <div class="billingPhone">
           <p>Phone Number</p>
-          <input type="tel" placeholder="+7 (___) ___-__-__" ref="phoneInput" />
+          <input
+            type="tel"
+            placeholder="+7 (___) ___-__-__"
+            aria-label="Phone number"
+            autocomplete="tel"
+            ref="phoneInput"
+          />
         </div>
         <div class="billingLocation">
           <p>Town/City</p>
           <input
             type="text"
             placeholder="Town/City"
+            aria-label="Town or city"
+            autocomplete="address-level2"
             :value="store.billing.city"
             @input="handleInput('city', $event, /[^a-zA-Zа-яА-Я\s-]/g)"
           />
@@ -48,21 +60,23 @@
 </template>
 
 <script lang="ts" setup>
-import { usePaymentStore } from "@/stores/toast";
+import { onMounted, ref, onBeforeUnmount, watch } from "vue";
+import IMask from "imask";
+import { usePaymentStore, type Billing } from "@/stores/payment";
+
 const store = usePaymentStore();
 
-const handleInput = (field: any, event: Event, regex: RegExp) => {
+const handleInput = (field: keyof Billing, event: Event, regex: RegExp) => {
   const input = event.target as HTMLInputElement;
   const filteredValue = input.value.replace(regex, "");
+  // перезаписываем значение, чтобы запрещённые символы исчезали и из поля
+  input.value = filteredValue;
   store.setBillingField(field, filteredValue);
 };
 
-import { onMounted, ref, onBeforeUnmount } from "vue";
-import IMask from "imask";
-
 const phoneInput = ref<HTMLInputElement | null>(null);
 
-let mask: IMask.InputMask<any>;
+let mask: ReturnType<typeof IMask> | undefined;
 
 onMounted(() => {
   if (!phoneInput.value) return;
@@ -76,9 +90,17 @@ onMounted(() => {
   }
 
   mask.on("accept", () => {
-    store.setBillingField("phone", mask.value);
+    store.setBillingField("phone", mask!.value);
   });
 });
+
+// после сброса формы (успешное бронирование) очищаем и маску телефона
+watch(
+  () => store.billing.phone,
+  (phone) => {
+    if (!phone && mask && mask.value) mask.value = "";
+  },
+);
 
 onBeforeUnmount(() => {
   mask?.destroy();

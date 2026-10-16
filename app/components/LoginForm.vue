@@ -1,12 +1,13 @@
 <template>
   <div class="login-form-container">
-    <button class="close-btn" @click="router.push('/')" title="На главную">
+    <NuxtLink to="/" class="close-btn" aria-label="На главную" title="На главную">
       <svg
         width="24"
         height="24"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
       >
         <path
           d="M18 6L6 18M6 6L18 18"
@@ -16,97 +17,109 @@
           stroke-linejoin="round"
         />
       </svg>
-    </button>
+    </NuxtLink>
 
-    <h2 class="form-title">Вход в аккаунт</h2>
+    <h1 class="form-title">Вход в аккаунт</h1>
     <p class="form-subtitle">Добро пожаловать в MORENT</p>
 
     <form @submit.prevent="handleLogin" class="form-body">
       <div class="input-group">
-        <label>Email</label>
+        <label for="login-email">Email</label>
         <input
+          id="login-email"
           type="email"
           v-model="email"
           placeholder="Введите ваш email"
+          autocomplete="email"
           required
         />
       </div>
 
       <div class="input-group">
-        <label>Пароль</label>
+        <label for="login-password">Пароль</label>
         <input
+          id="login-password"
           type="password"
           v-model="password"
           placeholder="Введите пароль"
+          autocomplete="current-password"
           required
         />
       </div>
 
-      <button type="submit" class="submit-btn">Войти</button>
+      <button type="submit" class="submit-btn" :disabled="isSubmitting">
+        {{ isSubmitting ? "Вход…" : "Войти" }}
+      </button>
 
       <p class="switch-text">
         Нет аккаунта?
-        <span class="switch-link" @click="$emit('switch-to-register')">
+        <button
+          type="button"
+          class="switch-link"
+          @click="$emit('switch-to-register')"
+        >
           Зарегистрироваться
-        </span>
+        </button>
       </p>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { usePaymentStore } from "@/stores/toast";
-
-interface User {
-  email: string;
-  password: string;
-  createdAt: number;
-}
+import { ref, onBeforeUnmount } from "vue";
+import { useToastStore } from "@/stores/toast";
 
 const router = useRouter();
-const toastStore = usePaymentStore();
+const toastStore = useToastStore();
 
 const email = ref<string>("");
 const password = ref<string>("");
+const isSubmitting = ref<boolean>(false);
 
-const isAuthenticated = useCookie<string>("auth-logged-in");
+const isAuthenticated = useCookie<string | null>("auth-logged-in", {
+  maxAge: 60 * 60 * 24 * 7,
+  sameSite: "lax",
+});
 
 defineEmits<{
   (e: "switch-to-register"): void;
 }>();
 
-// логика формы входа
-const handleLogin = (): void => {
-  const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+let redirectTimer: ReturnType<typeof setTimeout> | undefined;
+onBeforeUnmount(() => clearTimeout(redirectTimer));
 
-  if (!emailReg.test(email.value)) {
+const handleLogin = async (): Promise<void> => {
+  if (isSubmitting.value) return;
+
+  const normalizedEmail = email.value.trim().toLowerCase();
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
     toastStore.addToast("Пожалуйста, введите корректный Email", "error");
     return;
   }
 
-  if (password.value.length < 4) {
+  if (password.value.length < MIN_PASSWORD_LENGTH) {
     toastStore.addToast("Пароль должен быть не менее 4 символов", "warning");
     return;
   }
 
-  const users: User[] = JSON.parse(
-    localStorage.getItem("morent_users") || "[]",
-  );
+  isSubmitting.value = true;
+  try {
+    const passwordHash = await hashPassword(normalizedEmail, password.value);
+    const validUser = readUsers().find(
+      (u) => u.email === normalizedEmail && u.passwordHash === passwordHash,
+    );
 
-  const validUser = users.find(
-    (u: User) => u.email === email.value && u.password === password.value,
-  );
+    if (!validUser) {
+      toastStore.addToast("Неверный email или пароль", "error");
+      return;
+    }
 
-  if (validUser) {
     isAuthenticated.value = "true";
     toastStore.addToast("Успешный вход!", "success");
-
-    setTimeout(() => {
-      router.push("/adminCarRent");
-    }, 500);
-  } else {
-    toastStore.addToast("Неверный email или пароль", "error");
+    redirectTimer = setTimeout(() => router.push("/adminCarRent"), 500);
+  } finally {
+    isSubmitting.value = false;
   }
 };
 </script>
@@ -187,7 +200,6 @@ const handleLogin = (): void => {
   border: 1px solid rgba(195, 212, 233, 0.4);
   border-radius: 10px;
   padding: 0 1rem;
-  outline: none;
   transition: border-color 0.3s ease;
 }
 
@@ -234,5 +246,12 @@ const handleLogin = (): void => {
 
 .switch-link:hover {
   text-decoration: underline;
+}
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.close-btn {
+  text-decoration: none;
 }
 </style>

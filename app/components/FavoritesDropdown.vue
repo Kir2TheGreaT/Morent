@@ -9,7 +9,7 @@
       >
         <div class="dropdown-header">
           <h3>Favorites ({{ favoritesProducts.length }})</h3>
-          <button class="close-btn" @click="$emit('close')">
+          <button class="close-btn" type="button" aria-label="Close favorites" @click="$emit('close')">
             <Close />
           </button>
         </div>
@@ -21,13 +21,13 @@
             class="dropdown-item"
           >
             <div class="item-main" @click="goSummary(item.id)">
-              <img :src="item.image" alt="" />
+              <img :src="item.image" :alt="item.name" loading="lazy" />
               <div class="item-info">
                 <p class="name">{{ item.name }}</p>
                 <p class="price">${{ item.price.toFixed(2) }}/day</p>
               </div>
             </div>
-            <button class="trash-btn" @click.stop="removeItem(item.id)">
+            <button class="trash-btn" type="button" :aria-label="`Remove ${item.name} from favorites`" @click.stop="removeItem(item.id)">
               <Trash />
             </button>
           </div>
@@ -36,6 +36,7 @@
               >${{ totalPrice.toFixed(2) }}</span
             >
             <button
+              type="button"
               class="clear-all"
               :class="{ 'is-confirming': isConfirming }"
               @click="handleClearAll"
@@ -65,7 +66,7 @@ const props = defineProps<{
   anchor: HTMLElement | null;
 }>();
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits<{ (e: "close"): void }>();
 const router = useRouter();
 
 const goSummary = (id: number) => {
@@ -77,7 +78,7 @@ const favoritesCar = useFavorites();
 
 const favoritesProducts = computed(() => {
   return products.filter((product) =>
-    favoritesCar.favoritesIds.includes(Number(product.id)),
+    favoritesCar.favoritesIds.includes(product.id),
   );
 });
 
@@ -111,10 +112,13 @@ const handleClearAll = () => {
 };
 
 const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as Node;
+  // Клик по кнопке-якорю обрабатывает она сама (toggle), иначе список закроется и тут же откроется снова.
   if (
     props.isOpen &&
     dropdownRef.value &&
-    !dropdownRef.value.contains(event.target as Node)
+    !dropdownRef.value.contains(target) &&
+    !props.anchor?.contains(target)
   ) {
     emit("close");
   }

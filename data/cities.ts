@@ -1,0 +1,18 @@
+export const cities: string[] = [
+  "Moscow",
+  "London",
+  "New York",
+  "Tokyo",
+  "Paris",
+  "Berlin",
+  "Dubai",
+  "Singapore",
+  "Los Angeles",
+  "Barcelona",
+  "Rome",
+  "Prague",
+  "Amsterdam",
+  "Seoul",
+  "Madrid",
+  "Istanbul",
+];

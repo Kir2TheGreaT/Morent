@@ -1,33 +1,23 @@
 import { defineStore } from "pinia";
 
-export const usePaymentStore = defineStore("payment", {
+export type ToastType = "success" | "error" | "warning";
+
+interface Toast {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+
+let nextId = 0;
+
+export const useToastStore = defineStore("toast", {
   state: () => ({
-    billing: {
-      name: "",
-      phone: "",
-      address: "",
-      city: "",
-    },
-    payment: {
-      method: "card",
-      cardNumber: "",
-      cardHolder: "",
-      expirationDate: "",
-      cvc: "",
-    },
-    toasts: [] as { id: number; message: string; type: string }[],
+    toasts: [] as Toast[],
   }),
 
   actions: {
-    setBillingField(field: keyof typeof this.billing, value: string) {
-      this.billing[field] = value;
-    },
-
-    addToast(
-      message: string,
-      type: "success" | "error" | "warning" = "success",
-    ) {
-      const id = Date.now();
+    addToast(message: string, type: ToastType = "success") {
+      const id = ++nextId;
       this.toasts.push({ id, message, type });
       setTimeout(() => {
         this.toasts = this.toasts.filter((t) => t.id !== id);

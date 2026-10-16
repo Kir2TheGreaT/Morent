@@ -20,51 +20,51 @@
         :src="product.image"
         :alt="product.name"
         class="main-image"
+        fetchpriority="high"
       />
     </div>
   </div>
   <div class="previewsCar">
-    <div
+    <button
+      type="button"
       class="previewImg firstPreviewImg"
       :class="{ active: activePreview === 'car' }"
+      :aria-pressed="activePreview === 'car'"
+      aria-label="Show car exterior"
       @click="activePreview = 'car'"
     >
-      <img :src="product.image" alt="Car preview" class="previewCarImage" />
-    </div>
-    <!-- Превью 2 -->
-    <div
+      <img :src="product.image" alt="" class="previewCarImage" />
+    </button>
+    <button
+      v-for="view in interiorViews"
+      :key="view.id"
+      type="button"
       class="previewImg"
-      :class="{ active: activePreview === 'view2' }"
-      @click="activePreview = 'view2'"
-      style="background-image: url(&quot;/cars/inside/view2.png&quot;)"
-    ></div>
-    <!-- Превью 3 -->
-    <div
-      class="previewImg"
-      :class="{ active: activePreview === 'view3' }"
-      @click="activePreview = 'view3'"
-      style="background-image: url(&quot;/cars/inside/view3.png&quot;)"
-    ></div>
+      :class="{ active: activePreview === view.id }"
+      :aria-pressed="activePreview === view.id"
+      :aria-label="view.label"
+      :style="{ backgroundImage: `url('/cars/inside/${view.id}.png')` }"
+      @click="activePreview = view.id"
+    ></button>
   </div>
 </template>
+
 <script lang="ts" setup>
 import { ref } from "vue";
-const props = defineProps<{
-  product: {
-    id: number;
-    name: string;
-    image: string;
-    category: string;
-    gasoline: number;
-    drive: string;
-    seats: number;
-    price: number;
-    favorite: boolean;
-  };
+import type { Product } from "~~/data/products";
+
+defineProps<{
+  product: Product;
 }>();
 
-const activePreview = ref("car");
+const interiorViews = [
+  { id: "view2", label: "Show interior view 1" },
+  { id: "view3", label: "Show interior view 2" },
+];
+
+const activePreview = ref<string>("car");
 </script>
+
 <style>
 .car-promo-card {
   max-width: 492px;

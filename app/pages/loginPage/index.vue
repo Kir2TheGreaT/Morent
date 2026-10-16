@@ -19,6 +19,11 @@ definePageMeta({
   layout: "auth",
 });
 
+useSeoMeta({
+  title: "Login",
+  robots: "noindex, nofollow",
+});
+
 const currentView = ref<"login" | "register">("login");
 </script>
 

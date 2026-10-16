@@ -1,31 +1,19 @@
+import { defineStore } from "pinia";
+
 export interface Review {
   id: number;
+  carId: number | null; // null — общие (демо) отзывы, показываются у всех машин
   name: string;
   position: string;
   avatar: string;
   date: string;
   rating: number;
   text: string;
+  isOwn?: boolean;
 }
 
-export const addReview = (text: string, rating: number) => {
-  const newEntry: Review = {
-    id: Date.now(),
-    name: "You",
-    position: "Guest",
-    avatar: "/noImage.webp",
-    date: new Date().toLocaleDateString("ru-RU"),
-    rating: rating,
-    text: text,
-  };
-  reviews.value.unshift(newEntry);
-};
-
-export const removeReview = (id: number) => {
-  reviews.value = reviews.value.filter((r) => r.id !== id);
-};
-
-export const reviews = ref<Review[]>([
+type SeedReview = Omit<Review, "carId">;
+const seedReviews: SeedReview[] = [
   {
     id: 1,
     name: "Jesse Pinkman",
@@ -48,7 +36,7 @@ export const reviews = ref<Review[]>([
     id: 3,
     name: "Eminem",
     position: "Music Producer",
-    avatar: "/avatars/Eminem.jpg",
+    avatar: "/avatars/eminem.jpg",
     date: "02.09.2028",
     rating: 5,
     text: "MORENT hit harder than a clean verse. Fast booking, no hidden drama, car was spotless and ready to go. That’s how a service should run.",
@@ -66,7 +54,7 @@ export const reviews = ref<Review[]>([
     id: 5,
     name: "Ice Cube",
     position: "Actor & Producer",
-    avatar: "/avatars/IceCube.webp",
+    avatar: "/avatars/iceCube.webp",
     date: "04.09.2028",
     rating: 3,
     text: "Clean rides, fair prices, and no nonsense. Picked up the car, drove off, returned it easy. That’s the kind of service I mess with.",
@@ -75,7 +63,7 @@ export const reviews = ref<Review[]>([
     id: 6,
     name: "Albert Einstein",
     position: "Theoretical Physicist",
-    avatar: "/avatars/Albert.webp",
+    avatar: "/avatars/albert.webp",
     date: "05.09.2028",
     rating: 5,
     text: "Everything is relative, but this service is absolutely excellent. The process was intuitive, efficient, and pleasantly free of complications.",
@@ -93,7 +81,7 @@ export const reviews = ref<Review[]>([
     id: 8,
     name: "Isaac Newton",
     position: "Mathematician",
-    avatar: "/avatars/Newton.jpg",
+    avatar: "/avatars/newton.jpg",
     date: "06.09.2028",
     rating: 3,
     text: "The motion of renting a car has never been so straightforward. Every action produced a predictable and satisfactory result.",
@@ -111,7 +99,7 @@ export const reviews = ref<Review[]>([
     id: 10,
     name: "Stephen Hawking",
     position: "Cosmologist",
-    avatar: "/avatars/Hawking.jpg",
+    avatar: "/avatars/hawking.jpg",
     date: "07.09.2028",
     rating: 4,
     text: "Navigating MORENT was easier than explaining black holes. Efficient, accessible, and impressively well-structured.",
@@ -120,7 +108,7 @@ export const reviews = ref<Review[]>([
     id: 11,
     name: "Alan Turing",
     position: "Computer Scientist",
-    avatar: "/avatars/Turing.webp",
+    avatar: "/avatars/turing.webp",
     date: "07.09.2028",
     rating: 5,
     text: "The system behaves logically and predictably. From a computational standpoint, the user experience is near optimal.",
@@ -161,4 +149,38 @@ export const reviews = ref<Review[]>([
     rating: 4,
     text: "It just works — and that’s the beauty of it. Simple, fun, and surprisingly satisfying. I’d happily use it again.",
   },
-]);
+];
+
+export const useReviewsStore = defineStore(
+  "reviews",
+  () => {
+    // Только отзывы пользователя: демо-данные не дублируются в localStorage.
+    const ownReviews = ref<Review[]>([]);
+
+    const forCar = (carId: number): Review[] => [
+      ...ownReviews.value.filter((r) => r.carId === carId),
+      ...seedReviews.map((r) => ({ ...r, carId: null })),
+    ];
+
+    function addReview(carId: number, text: string, rating: number) {
+      ownReviews.value.unshift({
+        id: Date.now(),
+        carId,
+        name: "You",
+        position: "Guest",
+        avatar: "/noImage.webp",
+        date: new Date().toLocaleDateString("ru-RU"),
+        rating,
+        text,
+        isOwn: true,
+      });
+    }
+
+    function removeReview(id: number) {
+      ownReviews.value = ownReviews.value.filter((r) => r.id !== id);
+    }
+
+    return { ownReviews, forCar, addReview, removeReview };
+  },
+  { persist: true },
+);

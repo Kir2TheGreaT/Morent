@@ -1,5 +1,6 @@
 <template>
   <div class="mainFirstPage">
+    <h1 class="visually-hidden">MORENT — car rental</h1>
     <div :class="addsCars">
       <AddCars
         class="firstCard"
@@ -46,19 +47,20 @@
       />
     </div>
     <div class="popular_car">
-      <h5>Popular Car</h5>
-      <NuxtLink class="view-all-link" @click="goCategory">View All</NuxtLink>
+      <h2 class="sectionHeading">Popular Car</h2>
+      <NuxtLink class="view-all-link" to="/categoryCarRent">View All</NuxtLink>
     </div>
     <div class="popular_car2">
       <responsive-card
-        :carousel="isCarouselPopular"
-        :maxVisible="wideScreenQuantityCards"
         v-for="product in popularProducts"
+        :key="product.id"
+        :carousel="isCarouselPopular"
+        :maxVisible="popularCount"
         :product="product"
       />
     </div>
     <div class="recommendationText">
-      <p>Recommendation Car</p>
+      <h2 class="sectionHeading">Recommendation Car</h2>
     </div>
     <div class="recommendationCarCard">
       <responsive-card
@@ -81,167 +83,80 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, onMounted, onUnmounted, nextTick, reactive } from "vue";
+import { computed, ref, onMounted, nextTick, watch } from "vue";
 import AddCars from "~/components/Add-cars.vue";
 import ButtonRental from "~/components/Button-rental.vue";
-import { products } from "~~/data/products.ts";
-import type { Product } from "~~/data/products.ts";
+import { products } from "~~/data/products";
+import type { Product } from "~~/data/products";
 
-const router = useRouter();
-
-const props = defineProps<{
-  carousel?: boolean;
-  maxVisible?: number;
-  product?: Product;
-}>();
-
-const goCategory = (): void => {
-  router.push("/categoryCarRent");
-};
-
-// рендер карточек
-const popularProducts = computed<Product[]>(() => {
-  return products.slice(0, wideScreenQuantityCards.value);
+useSeoMeta({
+  title: "Car rental — popular and recommended cars",
+  description:
+    "Rent a car safely and reliably at a low price: sport cars, SUVs, sedans, hatchbacks and electric vehicles.",
+  ogTitle: "MORENT — car rental",
+  ogDescription:
+    "Ease of doing a car rental safely and reliably. Of course at a low price.",
 });
 
-//переключение виджетов
-const isSwitched = ref<boolean>(false);
+const rentalStore = useRentalStore();
+const { screenWidth } = useScreenWidth();
+const {
+  pickUpRef,
+  dropOffRef,
+  isSwitched,
+  calculateDistance,
+  switchToggle,
+  pickUpStyle,
+  dropOffStyle,
+} = useSwapAnimation();
 
-const switchToggle = (): void => {
-  isSwitched.value = !isSwitched.value;
-};
+const isWideScreen = computed<boolean>(() => screenWidth.value >= 760);
+const addsCars = computed(() => ({
+  addsCars: true,
+  addsCarsFlex: isWideScreen.value,
+}));
 
-// ширина экрана
-const isWideScreen = ref<boolean>(false);
-const screenWidth = ref<number>(0);
+// Популярные: на широких экранах 4, иначе 6
+const popularCount = computed<number>(() =>
+  screenWidth.value >= 1440 ? 4 : 6,
+);
+const popularProducts = computed<Product[]>(() =>
+  products.slice(0, popularCount.value),
+);
+const isCarouselPopular = computed<boolean>(() => screenWidth.value < 1440);
 
-onMounted(() => {
-  checkScreenWidth();
-  window.addEventListener("resize", checkScreenWidth);
-});
-
-// Карточки рекомендованных
+// Рекомендованные
 const maxRecommendationCards = computed<number>(() => {
   if (screenWidth.value >= 1440) return 12;
   if (screenWidth.value >= 1280) return 7;
   if (screenWidth.value >= 768) return 6;
   return 5;
 });
-
-// карточки адаптив
-const isCarouselPopular = computed<boolean>(() => screenWidth.value < 1440);
 const isCarouselRecommendation = computed<boolean>(
   () => screenWidth.value >= 768,
 );
 
-// ресайз от экрана
-const checkScreenWidth = (): void => {
-  screenWidth.value = window.innerWidth;
-  isWideScreen.value = screenWidth.value >= 760;
-};
-
-const addsCars = computed(() => ({
-  addsCars: true,
-  addsCarsFlex: isWideScreen.value,
-}));
-
-// карточки подсчет до нажатия ALL
-const wideScreenQuantityCards = computed<number>(() => {
-  if (screenWidth.value >= 1440) return 4;
-  return 6;
-});
-
-// вычисление анимации
-type ComponentWithEl = {
-  $el?: HTMLElement;
-};
-
-const pickUpRef = ref<ComponentWithEl | HTMLElement | null>(null);
-const dropOffRef = ref<ComponentWithEl | HTMLElement | null>(null);
-
-const dist = reactive<{
-  x: number;
-  y: number;
-}>({
-  x: 0,
-  y: 0,
-});
-
-const calculateDistance = (): void => {
-  const el1 =
-    pickUpRef.value && "$el" in pickUpRef.value
-      ? pickUpRef.value.$el
-      : pickUpRef.value;
-
-  const el2 =
-    dropOffRef.value && "$el" in dropOffRef.value
-      ? dropOffRef.value.$el
-      : dropOffRef.value;
-
-  if (el1 && el2) {
-    dist.x = el2.offsetLeft - el1.offsetLeft;
-    dist.y = el2.offsetTop - el1.offsetTop;
-  }
-};
-
-const pickUpStyle = computed<Record<string, string>>(() =>
-  isSwitched.value
-    ? { transform: `translate(${dist.x}px, ${dist.y}px)` }
-    : { transform: "none" },
-);
-
-const dropOffStyle = computed<Record<string, string>>(() =>
-  isSwitched.value
-    ? { transform: `translate(${-dist.x}px, ${-dist.y}px)` }
-    : { transform: "none" },
-);
-
-//
-const onResize = (): void => {
-  checkScreenWidth();
-  calculateDistance();
-};
-
-onMounted(() => {
-  window.addEventListener("resize", onResize);
-
-  nextTick(() => {
-    checkScreenWidth();
-    calculateDistance();
-  });
-});
-
-onUnmounted(() => {
-  window.removeEventListener("resize", onResize);
-});
-
-//кнопка больше машин
-
 const extraCarsCount = ref<number>(0);
 
-const isAllShown = computed<boolean>(() => {
-  return recommendationProducts.value.length >= products.length;
-});
+const recommendationProducts = computed<Product[]>(() =>
+  products.slice(0, maxRecommendationCards.value + extraCarsCount.value),
+);
 
-const buttonLabel = computed<string>(() => {
-  return isAllShown.value ? "Show Start" : "Show More Car";
-});
+const isAllShown = computed<boolean>(
+  () => recommendationProducts.value.length >= products.length,
+);
 
-const recommendationProducts = computed<Product[]>(() => {
-  const totalToShow = maxRecommendationCards.value + extraCarsCount.value;
-  return products.slice(0, totalToShow);
-});
+const buttonLabel = computed<string>(() =>
+  isAllShown.value ? "Show Start" : "Show More Car",
+);
 
 const showMoreCars = (): void => {
-  if (isAllShown.value) {
-    extraCarsCount.value = 9;
-  } else {
-    extraCarsCount.value += 20;
-  }
+  extraCarsCount.value = isAllShown.value ? 0 : extraCarsCount.value + 20;
 };
 
-// виджет - данные
-const rentalStore = useRentalStore();
+// пересчёт дистанции для анимации обмена виджетов
+onMounted(() => nextTick(calculateDistance));
+watch(screenWidth, () => nextTick(calculateDistance));
 </script>
 
 <style>
@@ -425,7 +340,8 @@ const rentalStore = useRentalStore();
       text-decoration: underline;
     }
 
-    h5 {
+    .sectionHeading {
+      margin: 1.67em 0;
       color: var(--secondary-300);
       font-size: 0.875rem;
       font-weight: 600;
@@ -435,16 +351,6 @@ const rentalStore = useRentalStore();
       }
     }
 
-    p {
-      text-decoration: underline;
-      font-weight: 600;
-      font-size: 0.75rem;
-      color: var(--primary-500);
-
-      @media (min-width: 1440px) {
-        font-size: 1rem;
-      }
-    }
   }
 
   .popular_car2 {
@@ -501,7 +407,8 @@ const rentalStore = useRentalStore();
       padding-left: 4rem;
     }
 
-    p {
+    .sectionHeading {
+      margin: 1em 0;
       font-weight: 500;
       font-size: 0.875rem;
       color: var(--secondary-300);

@@ -1,33 +1,35 @@
 import { defineStore } from "pinia";
 
+// Формат совпадает с форматом flatpickr ("d M Y" и "H:i"), поэтому дефолт корректно разбирается.
+const formatDate = (d: Date): string =>
+  d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+const formatTime = (d: Date): string =>
+  d.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
 export const useRentalStore = defineStore("rental", {
   state: () => {
     const now = new Date();
-
-    const currentDate = now.toLocaleDateString("ru-RU", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-
-    const currentTime = now.toLocaleTimeString("ru-RU", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
+    const slot = () => ({
+      location: "Moscow",
+      date: formatDate(now),
+      time: formatTime(now),
     });
 
     return {
-      pickup: {
-        location: "Moscow",
-        date: currentDate,
-        time: currentTime,
-      },
-      dropoff: {
-        location: "Moscow",
-        date: currentDate,
-        time: currentTime,
-      },
+      pickup: slot(),
+      dropoff: slot(),
     };
   },
-  persist: true,
+  persist: {
+    key: "rental-v2", // смена схемы/формата даты не ломает старые сохранённые данные
+  },
 });

@@ -1,8 +1,9 @@
 <template>
   <div class="accountMainPage">
+    <h1 class="visually-hidden">Account dashboard</h1>
     <Transition name="slide-side">
       <div v-if="isSidebarOpen" class="mobileSidebar">
-        <AccDashboard></AccDashboard>
+        <AccDashboard />
       </div>
     </Transition>
     <div
@@ -11,7 +12,7 @@
       @click="closeSidebar"
     ></div>
     <div class="accountDashBoard">
-      <AccDashboard></AccDashboard>
+      <AccDashboard />
     </div>
     <div class="leftsideAccount">
       <ClientOnly>
@@ -20,14 +21,13 @@
       </ClientOnly>
     </div>
     <div class="rightsideAccount">
-      <AccountStat class="accountStatisticWidget"></AccountStat>
-      <RecentTransaction class="recentTransactionWidget"></RecentTransaction>
+      <AccountStat class="accountStatisticWidget" />
+      <RecentTransaction class="recentTransactionWidget" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, inject, watch } from "vue";
 import AccDashboard from "~/components/accountPage/accDashboard.vue";
 import ProjectMap from "~/components/accountPage/project-map.vue";
 import PaymentAccountData from "~/components/accountPage/paymentAccountData.vue";
@@ -40,32 +40,12 @@ definePageMeta({
   middleware: "auth",
 });
 
-// сайдбар
-interface SidebarContext {
-  isSidebarOpen: {
-    value: boolean;
-  };
-}
-
-const sidebarContext = inject<SidebarContext | null>("sidebarContext", null);
-
-const isSidebarOpen = computed<boolean>(
-  () => sidebarContext?.isSidebarOpen.value ?? false,
-);
-
-const closeSidebar = (): void => {
-  if (sidebarContext) {
-    sidebarContext.isSidebarOpen.value = false;
-  }
-};
-
-watch(isSidebarOpen, (value: boolean) => {
-  if (value && !isSidebarOpen.value) {
-    document.body.style.overflow = "hidden";
-  } else {
-    document.body.style.overflow = "";
-  }
+useSeoMeta({
+  title: "Account",
+  robots: "noindex, nofollow",
 });
+
+const { isSidebarOpen, closeSidebar } = useSidebarScrollLock();
 </script>
 
 <style>
@@ -103,8 +83,9 @@ watch(isSidebarOpen, (value: boolean) => {
     left: 0;
     width: 280px;
     height: 100vh;
+    height: 100dvh;
     background-color: var(--primary-0);
-    z-index: 100;
+    z-index: var(--z-drawer);
     box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
     padding: 1rem;
     overflow-y: auto;
@@ -116,8 +97,9 @@ watch(isSidebarOpen, (value: boolean) => {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.4);
-    z-index: 99;
+    z-index: var(--z-overlay);
   }
 }
 .slide-side-enter-active,
@@ -128,5 +110,13 @@ watch(isSidebarOpen, (value: boolean) => {
 .slide-side-enter-from,
 .slide-side-leave-to {
   transform: translateX(-100%);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 </style>

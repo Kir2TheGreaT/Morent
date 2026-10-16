@@ -8,7 +8,9 @@
       </p>
     </div>
     <div class="pictureSummary">
-      <div class="cardPictureSummary"><img :src="product.image" alt="" /></div>
+      <div class="cardPictureSummary">
+          <img :src="product.image" :alt="product.name" />
+        </div>
       <div class="cardInformationSummary">
         <h4>{{ product.name }}</h4>
         <div class="ratingSummaryCard">
@@ -30,19 +32,23 @@
           <h5>Subtotal</h5>
           <p>${{ product.price.toFixed(2) }}</p>
         </div>
-        <div class="secondLineSubtotal">
-          <h5>Tax</h5>
-          <p>$</p>
+        <div class="secondLineSubtotal" v-if="payment.isDiscountApplied">
+          <h5>Discount ({{ PROMO_CODE }})</h5>
+          <p>-${{ discountAmount.toFixed(2) }}</p>
         </div>
       </div>
-      <form class="summaryInput" @submit="handleApplyPromo">
+      <form class="summaryInput" @submit.prevent="handleApplyPromo">
         <input
           type="text"
           placeholder="Apply promo code"
           v-model="promoCode"
+          aria-label="Promo code"
           maxlength="5"
+          autocomplete="off"
         />
-        <button type="submit" class="applyNow">Apply Now</button>
+        <button type="submit" class="applyNow" :disabled="payment.isDiscountApplied">
+          Apply Now
+        </button>
       </form>
 
       <div class="totalRentalSummaryPrice">
@@ -57,42 +63,17 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed } from "vue";
 import Star from "../icons/star.vue";
-import { usePaymentStore } from "@/stores/toast";
-
-type Product = {
-  id: number;
-  name: string;
-  image: string;
-  category: string;
-  gasoline: number;
-  drive: string;
-  seats: number;
-  price: number;
-  favorite: boolean;
-};
+import type { Product } from "~~/data/products";
+import { usePaymentStore, PROMO_CODE, PROMO_DISCOUNT } from "@/stores/payment";
+import { useToastStore } from "@/stores/toast";
 
 const props = defineProps<{
   product: Product;
 }>();
 
-// изменение текста в прайсе
-const screenWidth = ref<number>(0);
-
-const updateWidth = (): void => {
-  screenWidth.value = window.innerWidth;
-};
-
-onMounted(() => {
-  screenWidth.value = window.innerWidth;
-  window.addEventListener("resize", updateWidth);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("resize", updateWidth);
-});
-
+const { screenWidth } = useScreenWidth();
 const totalText = computed<string>(() =>
   screenWidth.value >= 1440
     ? "Overall price and includes rental discount"
@@ -100,31 +81,37 @@ const totalText = computed<string>(() =>
 );
 
 // промокод
-const toastStore = usePaymentStore();
+const payment = usePaymentStore();
+const toast = useToastStore();
 const promoCode = ref<string>("");
-const isDiscountApplied = ref<boolean>(false);
 
-const handleApplyPromo = (e: Event): void => {
-  e.preventDefault();
+const handleApplyPromo = (): void => {
+  const code = promoCode.value.trim();
 
-  if (promoCode.value.length === 5) {
-    if (promoCode.value.toUpperCase() === "CAR10") {
-      isDiscountApplied.value = true;
-      toastStore.addToast("Скидка применена - 10%", "success");
-    } else {
-      toastStore.addToast("Неверный код, попробуйте другой", "error");
-    }
-  } else {
-    toastStore.addToast("Промокод должен состоять из 5 знаков", "warning");
+  if (code.length !== PROMO_CODE.length) {
+    toast.addToast(
+      `Промокод должен состоять из ${PROMO_CODE.length} знаков`,
+      "warning",
+    );
+    return;
   }
+
+  if (code.toUpperCase() !== PROMO_CODE) {
+    toast.addToast("Неверный код, попробуйте другой", "error");
+    return;
+  }
+
+  payment.isDiscountApplied = true;
+  toast.addToast(`Скидка применена - ${PROMO_DISCOUNT * 100}%`, "success");
 };
 
-const finalPrice = computed<number>(() => {
-  if (isDiscountApplied.value) {
-    return props.product.price * 0.9;
-  }
-  return props.product.price;
-});
+const discountAmount = computed<number>(() =>
+  payment.isDiscountApplied ? props.product.price * PROMO_DISCOUNT : 0,
+);
+
+const finalPrice = computed<number>(
+  () => props.product.price - discountAmount.value,
+);
 </script>
 
 <style scoped>

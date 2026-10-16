@@ -4,35 +4,41 @@
       <div class="text">
         <h2>{{ label }}</h2>
         <p>{{ descriptionAddsCar }}</p>
-        <NuxtLink v-if="randomPicCar"
-                  :to="`/detailCarRent/${randomPicCar.id}`"
-                  class="link-wrapper">
-          <Button-rental
-              class="adds-button"
-              label="Rental Car"
-              :alternate="second"
-              v-if="randomPicCar"
-              :product="randomPicCar"
+        <NuxtLink
+          v-if="randomPicCar"
+          :to="`/detailCarRent/${randomPicCar.id}`"
+          custom
+          v-slot="{ navigate }"
+        >
+          <ButtonRental
+            class="adds-button"
+            label="Rental Car"
+            :alternate="second"
+            @click="navigate"
           />
         </NuxtLink>
       </div>
       <div class="car">
-        <img v-if="randomPicCar" :src="randomPicCar.image" alt="random pic" />
+        <img
+          v-if="randomPicCar"
+          :src="randomPicCar.image"
+          :alt="randomPicCar.name"
+          fetchpriority="high"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { products } from "~~/data/products.ts";
-import type { Product } from"~~/data/products.ts";
+import { computed } from "vue";
+import ButtonRental from "./Button-rental.vue";
+import { products } from "~~/data/products";
 
 const props = defineProps<{
   second?: boolean;
   label: string;
   descriptionAddsCar: string;
-  product?: Product;
 }>();
 
 const backgroundStyle = computed(() => ({
@@ -46,19 +52,13 @@ const allowedImages = [
   "/cars/NissanGT-R.png",
   "/cars/Rolls-Royce.png",
 ];
-const randomPicCar = ref<Product | null>(null);
-const filteredProducts = products.filter((product) =>
-  allowedImages.includes(product.image),
-);
+const candidates = products.filter((p) => allowedImages.includes(p.image));
 
-onMounted(() => {
-  if (!filteredProducts.length) {
-    randomPicCar.value = products[0] ?? null;
-    return;
-  }
-
-  const index = Math.floor(Math.random() * filteredProducts.length);
-  randomPicCar.value = filteredProducts[index] ?? products[0] ?? null;
+// useState: случайный выбор делается один раз на сервере и переиспользуется на клиенте,
+// поэтому картинка есть уже в SSR-HTML (нет скачка LCP/CLS и расхождения при гидрации).
+const randomPicCar = useState(`hero-car-${props.second ? 2 : 1}`, () => {
+  const pool = candidates.length ? candidates : products;
+  return pool[Math.floor(Math.random() * pool.length)] ?? null;
 });
 </script>
 

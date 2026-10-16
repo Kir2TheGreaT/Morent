@@ -1,27 +1,15 @@
 <template>
-  <button
-    class="button"
-    :class="{ 'button-alternate': alternate }"
-    @click="handleClick"
-  >
+  <button class="button" type="button" :class="{ 'button-alternate': alternate }">
     <div class="text-container">{{ label }}</div>
   </button>
 </template>
 
 <script lang="ts" setup>
-import type { Product } from "~~/data/products";
-const props = defineProps<{
+// Нативные атрибуты и @click/disabled пробрасываются на корневую <button>.
+defineProps<{
   label: string;
   alternate?: boolean;
-  product?: Product;
 }>();
-
-const router = useRouter();
-
-const emit = defineEmits(["click"]);
-const handleClick = (mouse: MouseEvent) => {
-  emit("click", event);
-};
 </script>
 
 <style>

@@ -2,14 +2,19 @@
   <div class="pickupWidget">
     <div class="pickUp">
       <div class="circleBlue"></div>
-      <h5>{{ title }}</h5>
+      <h2 class="widgetTitle">{{ title }}</h2>
     </div>
     <div class="setTime">
       <div class="location side" ref="locationRef">
         <p>Locations</p>
         <div class="text" @click="toggleLocation">
           <p>{{ data.location || "Select your city" }}</p>
-          <button class="arrowButton">
+          <button
+            type="button"
+            class="arrowButton"
+            aria-label="Select city"
+            :aria-expanded="isLocationOpen"
+          >
             <ArrowDown :class="{ rotated: isLocationOpen }" />
           </button>
         </div>
@@ -33,12 +38,16 @@
         <p>Date</p>
         <div class="text" @click="openDatePicker">
           <flat-pickr
+            ref="datePickerRef"
             v-model="localDate"
             :config="dateConfig"
             class="flatpickr-custom-input"
             placeholder="Select date"
+            :aria-label="`${title} date`"
           />
-          <button class="arrowButton"><ArrowDown /></button>
+          <button type="button" class="arrowButton" aria-label="Open calendar">
+            <ArrowDown />
+          </button>
         </div>
       </div>
 
@@ -48,12 +57,16 @@
         <p>Time</p>
         <div class="text" @click="openTimePicker">
           <flat-pickr
+            ref="timePickerRef"
             v-model="localTime"
             :config="timeConfig"
             class="flatpickr-custom-input"
             placeholder="Select time"
+            :aria-label="`${title} time`"
           />
-          <button class="arrowButton"><ArrowDown /></button>
+          <button type="button" class="arrowButton" aria-label="Open time picker">
+            <ArrowDown />
+          </button>
         </div>
       </div>
     </div>
@@ -65,25 +78,7 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import ArrowDown from "./icons/arrow-down.vue";
 import flatPickr from "vue-flatpickr-component";
 import "flatpickr/dist/flatpickr.css";
-
-const cities: string[] = [
-  "Moscow",
-  "London",
-  "New York",
-  "Tokyo",
-  "Paris",
-  "Berlin",
-  "Dubai",
-  "Singapore",
-  "Los Angeles",
-  "Barcelona",
-  "Rome",
-  "Prague",
-  "Amsterdam",
-  "Seoul",
-  "Madrid",
-  "Istanbul",
-];
+import { cities } from "~~/data/cities";
 
 interface RentalData {
   location: string;
@@ -101,14 +96,6 @@ const emit = defineEmits<{
   (e: "update:time", value: string): void;
   (e: "update:location", value: string): void;
 }>();
-
-onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
 
 const isLocationOpen = ref<boolean>(false);
 const locationRef = ref<HTMLElement | null>(null);
@@ -128,42 +115,51 @@ const handleClickOutside = (event: MouseEvent): void => {
   }
 };
 
+onMounted(() => document.addEventListener("click", handleClickOutside));
+onUnmounted(() => document.removeEventListener("click", handleClickOutside));
+
 const localDate = ref<string>(props.data.date);
 const localTime = ref<string>(props.data.time);
 
-type FlatpickrInstance = {
-  fp?: {
-    open: () => void;
-  };
-};
+// Значения из store (например, восстановленные из localStorage) попадают в локальные поля.
+watch(
+  () => props.data.date,
+  (value) => (localDate.value = value),
+);
+watch(
+  () => props.data.time,
+  (value) => (localTime.value = value),
+);
 
-const datePickerRef = ref<FlatpickrInstance | null>(null);
-const timePickerRef = ref<FlatpickrInstance | null>(null);
+watch(localDate, (newDate: string) => {
+  if (newDate !== props.data.date) emit("update:date", newDate);
+});
+
+watch(localTime, (newTime: string) => {
+  if (newTime !== props.data.time) emit("update:time", newTime);
+});
+
+type FlatpickrInstance = { fp?: { open: () => void } } | null;
+
+const datePickerRef = ref<FlatpickrInstance>(null);
+const timePickerRef = ref<FlatpickrInstance>(null);
 
 const openDatePicker = (): void => datePickerRef.value?.fp?.open();
 const openTimePicker = (): void => timePickerRef.value?.fp?.open();
 
-watch(localDate, (newDate: string) => {
-  emit("update:date", newDate);
-});
-
-watch(localTime, (newTime: string) => {
-  emit("update:time", newTime);
-});
-
-const dateConfig = ref({
+const dateConfig = {
   dateFormat: "d M Y",
   minDate: "today",
   disableMobile: true,
-});
+};
 
-const timeConfig = ref({
+const timeConfig = {
   enableTime: true,
   noCalendar: true,
   dateFormat: "H:i",
   time_24hr: true,
   disableMobile: true,
-});
+};
 </script>
 
 <style>
@@ -183,7 +179,7 @@ const timeConfig = ref({
     padding-left: 1rem;
     padding-top: 1rem;
 
-    h5 {
+    .widgetTitle {
       font-size: 1rem;
       font-weight: 600;
       color: var(--secondary-500);
@@ -371,7 +367,6 @@ const timeConfig = ref({
   color: var(--secondary-300);
   background: transparent;
   border: none;
-  outline: none;
   padding: 0;
   margin: 0;
   cursor: pointer;

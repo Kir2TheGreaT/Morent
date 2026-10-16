@@ -1,5 +1,5 @@
 <template>
-  <div class="toast-wrapper">
+  <div class="toast-wrapper" role="status" aria-live="polite">
     <TransitionGroup name="list">
       <div
         v-for="toast in toastStore.toasts"
@@ -14,8 +14,8 @@
 </template>
 
 <script lang="ts" setup>
-import { usePaymentStore } from "@/stores/toast";
-const toastStore = usePaymentStore();
+import { useToastStore } from "@/stores/toast";
+const toastStore = useToastStore();
 </script>
 
 <style>
